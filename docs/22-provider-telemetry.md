@@ -182,8 +182,16 @@ Do not attach user or workspace identifiers to Prometheus labels. Detailed audit
 - Unknown price or token information remains unknown and includes a reason rather than becoming zero.
 - Normal evaluation remains offline and cost-free; provider calls require an explicit command.
 
-## Remaining Week 5 Sequence
+## Day 5 Definition Of Done
 
-1. Add a local comparison report across deterministic and configured provider paths.
-2. Exercise provider failure and fallback behavior end to end.
-3. Close the week with an exit-gate review against the technical roadmap.
+- `python -m evals.run_evals --comparison-report` emits a bounded local comparison of the deterministic release gate and selected provider path.
+- The report includes only quality summaries, provider/model identity, outcome counts, fallback count, and cost summary; it excludes fixture evidence, prompts, outputs, credentials, and endpoints.
+- A configured provider remains opt-in and makes one call per fixture; the normal CI evaluation remains offline and cost-free.
+- `LLM_PROVIDER=none` exercises the deterministic fallback end to end and reports `provider_not_configured` without attempting a network call.
+- A provider is ready to compare only when the deterministic gate passes, every provider call succeeds, and cost data is complete.
+
+## Week 5 Exit Gate Review
+
+The Week 5 exit gate is met for the local learning path: provider identity, latency, usage, outcome, fallback, and deployment-owned cost estimates can be compared with deterministic evaluation outcomes without storing prompts, incident evidence, credentials, endpoints, or generated output.
+
+The comparison is intentionally a local point-in-time report, not a durable usage ledger, a provider-quality benchmark, or an approval to enable a provider in CI. Week 6 will expand and version the corpus; Week 8 will evaluate managed and private endpoints under a controlled benchmark plan.

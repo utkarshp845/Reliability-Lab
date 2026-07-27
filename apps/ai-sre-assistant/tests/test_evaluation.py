@@ -78,15 +78,23 @@ def test_provider_report_calculates_cost_per_successful_evaluated_analysis(monke
     report = run_provider_suite(CASES[:2], config)
 
     assert report["passed"] is True
-    assert report["provider_outcomes"] == {"success": 2, "failure": 0, "not_configured": 0}
+    assert report["provider_outcomes"] == {
+        "success": 2,
+        "failure": 0,
+        "not_configured": 0,
+    }
     assert report["successful_evaluated_analyses"] == 2
     assert report["costed_successful_evaluated_analyses"] == 2
     assert report["estimated_total_cost_usd"] == "0.00030000"
-    assert report["estimated_cost_per_successful_evaluated_analysis_usd"] == "0.00015000"
+    assert (
+        report["estimated_cost_per_successful_evaluated_analysis_usd"] == "0.00015000"
+    )
     assert report["cost_unavailable_reason"] is None
 
 
-def test_provider_report_keeps_cost_per_success_unknown_with_incomplete_usage(monkeypatch):
+def test_provider_report_keeps_cost_per_success_unknown_with_incomplete_usage(
+    monkeypatch,
+):
     from decimal import Decimal
 
     from app.llm import LLMCallResult, LLMConfig
@@ -121,3 +129,73 @@ def test_provider_report_keeps_cost_per_success_unknown_with_incomplete_usage(mo
     assert report["estimated_total_cost_usd"] is None
     assert report["estimated_cost_per_successful_evaluated_analysis_usd"] is None
     assert report["cost_unavailable_reason"] == "incomplete_cost_data"
+
+
+def test_comparison_report_is_ready_when_provider_quality_and_cost_are_complete(
+    monkeypatch,
+):
+    from decimal import Decimal
+
+    from app.llm import LLMCallResult, LLMConfig
+    from evals.runner import run_comparison_suite
+
+    def successful_enrichment(**_kwargs):
+        return LLMCallResult(
+            analysis="optional provider analysis",
+            notice=None,
+            telemetry={
+                "provider": "openai",
+                "model": "eval-model",
+                "outcome": "success",
+                "usage": {"input_tokens": 100, "output_tokens": 50},
+            },
+        )
+
+    monkeypatch.setattr("evals.runner.analyze_with_llm", successful_enrichment)
+    config = LLMConfig(
+        provider="openai",
+        api_key="test-key",
+        base_url="https://example.invalid/v1",
+        model="eval-model",
+        input_usd_per_million_tokens=Decimal("1"),
+        output_usd_per_million_tokens=Decimal("1"),
+    )
+
+    report = run_comparison_suite(CASES[:2], config)
+
+    assert report["schema_version"] == "week5-comparison-v1"
+    assert report["deterministic"]["passed"] is True
+    assert report["provider"]["provider_outcomes"] == {
+        "success": 2,
+        "failure": 0,
+        "not_configured": 0,
+    }
+    assert report["comparison"] == {
+        "quality_results_match": True,
+        "fallbacks_observed": 0,
+        "status": "ready_to_compare",
+    }
+
+
+def test_comparison_report_exercises_unconfigured_provider_fallback_end_to_end():
+    from app.llm import LLMConfig
+    from evals.runner import run_comparison_suite
+
+    report = run_comparison_suite(
+        CASES[:1],
+        LLMConfig(provider="none", api_key="", base_url="", model=""),
+    )
+
+    assert report["deterministic"]["passed"] is True
+    assert report["provider"]["provider_outcomes"] == {
+        "success": 0,
+        "failure": 0,
+        "not_configured": 1,
+    }
+    assert report["provider"]["successful_evaluated_analyses"] == 0
+    assert report["provider"]["estimated_total_cost_usd"] is None
+    assert report["comparison"] == {
+        "quality_results_match": True,
+        "fallbacks_observed": 1,
+        "status": "provider_not_configured",
+    }

@@ -43,7 +43,7 @@ This is the canonical technical execution order for Reliability Lab. Each week a
 - Day 2 - complete: add aggregate counters and latency distributions with bounded labels.
 - Day 3 - complete: accept explicit deployment-owned pricing inputs and return per-call estimated cost metadata only when prices and token directions are known.
 - Day 4 - complete: join provider outcomes and deployment-owned cost estimates with deterministic evaluation results, including cost per successful evaluated analysis when data is complete.
-- Add a local comparison report across deterministic and configured provider paths.
+- Day 5 - complete: add a bounded local comparison report across deterministic and configured provider paths, including the end-to-end fallback state.
 
 See [Provider Telemetry Contract](22-provider-telemetry.md) for the per-request contract, aggregate metrics, privacy boundary, and remaining-week sequence.
 

@@ -783,3 +783,23 @@ What changed:
 - Kept the default deterministic evaluation command offline and cost-free for CI.
 
 Next: add a local comparison report, exercise fallback end to end, and close the Week 5 exit gate.
+
+## Week 5, Day 5 - Local Provider Comparison
+
+Today I closed the Week 5 measurement loop with a bounded local comparison report and an end-to-end fallback check.
+
+What changed:
+
+- Added `python -m evals.run_evals --comparison-report` to run the same corpus through the deterministic release gate and the selected optional-provider path.
+- Reported only quality summaries, bounded provider/model identity, outcome counts, fallback count, and estimated cost summaries.
+- Added an explicit comparison status so `ready_to_compare` requires deterministic quality to pass, every provider call to succeed, and cost data to be complete.
+- Kept provider calls opt-in and out of CI; the default evaluation remains offline and cost-free.
+- Exercised the `LLM_PROVIDER=none` path end to end to verify that provider-not-configured falls back safely without a network request.
+
+Why this matters:
+
+Provider comparisons are useful only when they preserve the deterministic quality gate and make unknowns visible. A local report makes the tradeoff inspectable without turning test fixtures or provider responses into a usage dataset.
+
+Week 5 exit-gate review:
+
+The local learning path can now compare provider usage, reliability, and deployment-owned cost with deterministic evaluation outcomes while preserving the telemetry privacy boundary. Durable metering, provider-quality scoring, and managed-versus-private benchmarks remain later, deliberately bounded work.

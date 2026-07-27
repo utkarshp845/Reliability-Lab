@@ -134,3 +134,13 @@ python -m evals.run_evals --provider-report
 ```
 
 This explicit command makes one provider call per evaluation case and prints a bounded JSON report, including estimated cost per successful evaluated analysis when complete token and price data is available. It remains outside CI so the normal release gate stays offline and cost-free.
+
+## Local Provider Comparison
+
+To compare the deterministic release gate with the configured provider path, run:
+
+```bash
+python -m evals.run_evals --comparison-report
+```
+
+The report contains only counts, bounded provider/model identity, quality-gate parity, provider outcomes, fallback count, and cost summaries. It does not print fixture evidence, prompts, provider output, credentials, or endpoints. A configured provider makes one call per fixture; with `LLM_PROVIDER=none`, the same command is an offline end-to-end fallback check.

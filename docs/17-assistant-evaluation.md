@@ -76,3 +76,15 @@ This makes one optional provider-enrichment call per fixture and emits a bounded
 A successful evaluated analysis requires a passing deterministic rubric and a successful provider response. The cost-per-success value is emitted only when every successful evaluated analysis has complete price and token data. Otherwise it is `null` with `cost_unavailable_reason`; unknown usage is never treated as zero cost. The report does not write a usage ledger or include fixture evidence, prompts, provider output, endpoints, or credentials.
 
 The normal evaluation command remains deterministic, offline, and cost-free. The provider report is deliberately opt-in and remains outside CI until a controlled provider test environment and explicit budget exist.
+
+## Local Provider Comparison
+
+Run the local comparison report with:
+
+```bash
+python -m evals.run_evals --comparison-report
+```
+
+It runs the deterministic corpus and the selected optional-provider path against the same fixtures, then reports the two quality summaries, bounded provider/model identity, outcome counts, fallback count, and estimated cost summary. `comparison.status` is `ready_to_compare` only when deterministic quality passes, the provider succeeds for every case, and cost is complete. Other explicit states distinguish unconfigured providers, request failures, incomplete cost data, and deterministic-gate failures.
+
+The command prints summaries only: it excludes fixture evidence, prompts, provider output, credentials, and endpoints. It is opt-in and outside CI because a configured provider makes one call per fixture. With `LLM_PROVIDER=none`, it is an offline end-to-end check that verifies the deterministic fallback remains available.
