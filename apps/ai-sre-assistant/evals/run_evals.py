@@ -1,15 +1,26 @@
 import argparse
 import json
 
-from evals.runner import RUBRIC_DIMENSIONS, run_provider_suite, run_suite
+from evals.runner import (
+    RUBRIC_DIMENSIONS,
+    run_comparison_suite,
+    run_provider_suite,
+    run_suite,
+)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run AI SRE Assistant evaluations.")
-    parser.add_argument(
+    report_group = parser.add_mutually_exclusive_group()
+    report_group.add_argument(
         "--provider-report",
         action="store_true",
         help="Run the corpus with optional provider enrichment and print a bounded JSON cost report.",
+    )
+    report_group.add_argument(
+        "--comparison-report",
+        action="store_true",
+        help="Compare deterministic evaluation with an optional provider path and print a bounded JSON summary.",
     )
     args = parser.parse_args()
 
@@ -17,6 +28,11 @@ def main() -> int:
         suite = run_provider_suite()
         print(json.dumps(suite, indent=2, sort_keys=True))
         return 0 if suite["passed"] else 1
+
+    if args.comparison_report:
+        report = run_comparison_suite()
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0 if report["deterministic"]["passed"] else 1
 
     suite = run_suite()
     print("AI SRE Assistant evaluation")

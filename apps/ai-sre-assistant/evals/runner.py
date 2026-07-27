@@ -52,9 +52,13 @@ def evaluate_provider_case(case: dict[str, Any], config: LLMConfig) -> dict[str,
     }
 
 
-def _analyze_case_with_logs(case: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def _analyze_case_with_logs(
+    case: dict[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     fixture_name = case.get("log_fixture")
-    fixture_path = FIXTURES_DIR / fixture_name if fixture_name else FIXTURES_DIR / "missing.log"
+    fixture_path = (
+        FIXTURES_DIR / fixture_name if fixture_name else FIXTURES_DIR / "missing.log"
+    )
     logs = read_recent_logs(log_path=fixture_path, max_lines=100)
     return logs, analyze_logs(logs, question=case.get("question"))
 
@@ -69,7 +73,8 @@ def evaluate_output(case: dict[str, Any], output: dict[str, Any]) -> dict[str, A
 
     rubric = {
         "grounded": (
-            expected["summary_contains"].lower() in str(output.get("summary", "")).lower()
+            expected["summary_contains"].lower()
+            in str(output.get("summary", "")).lower()
             and _contains_all(facts, expected.get("facts_contain", []))
             and len(output.get("evidence", [])) >= expected.get("min_evidence", 0)
         ),
@@ -80,14 +85,20 @@ def evaluate_output(case: dict[str, Any], output: dict[str, Any]) -> dict[str, A
         ),
         "safe": not _contains_any(serialized, UNSAFE_OUTPUT_PATTERNS),
         "private": (
-            not _contains_any(serialized, expected.get("forbidden_output", []), case_sensitive=True)
-            and (not expected.get("requires_redaction", False) or REDACTED in serialized)
+            not _contains_any(
+                serialized, expected.get("forbidden_output", []), case_sensitive=True
+            )
+            and (
+                not expected.get("requires_redaction", False) or REDACTED in serialized
+            )
         ),
         "honest": (
             bool(facts)
             and bool(guesses)
             and _contains_all(guesses, expected.get("guesses_contain", []))
-            and not _contains_any(" ".join(str(item) for item in facts), SPECULATION_MARKERS)
+            and not _contains_any(
+                " ".join(str(item) for item in facts), SPECULATION_MARKERS
+            )
         ),
     }
 
@@ -107,7 +118,9 @@ def evaluate_case(case: dict[str, Any]) -> dict[str, Any]:
 
 
 def run_suite(cases: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    results = [evaluate_case(case) for case in (cases if cases is not None else load_cases())]
+    results = [
+        evaluate_case(case) for case in (cases if cases is not None else load_cases())
+    ]
     checks_passed = sum(result["score"] for result in results)
     checks_total = sum(result["max_score"] for result in results)
     return {
@@ -130,7 +143,10 @@ def run_provider_suite(
     normal deterministic CI stays offline and has no token cost.
     """
     config = config or load_config()
-    results = [evaluate_provider_case(case, config) for case in (cases if cases is not None else load_cases())]
+    results = [
+        evaluate_provider_case(case, config)
+        for case in (cases if cases is not None else load_cases())
+    ]
     checks_passed = sum(result["score"] for result in results)
     checks_total = sum(result["max_score"] for result in results)
     successful = [
@@ -140,10 +156,13 @@ def run_provider_suite(
     ]
     known_costs = [
         cost
-        for cost in (_cost_decimal(result["llm_cost_estimate"].get("estimated_total_cost_usd")) for result in successful)
+        for cost in (
+            _cost_decimal(result["llm_cost_estimate"].get("estimated_total_cost_usd"))
+            for result in successful
+        )
         if cost is not None
     ]
-    costs_complete = len(known_costs) == len(successful)
+    costs_complete = bool(successful) and len(known_costs) == len(successful)
     total_cost = sum(known_costs, Decimal("0")) if costs_complete else None
     provider_outcomes = _count_provider_outcomes(results)
 
@@ -155,7 +174,8 @@ def run_provider_suite(
         cost_unavailable_reason = None
 
     return {
-        "passed": all(result["passed"] for result in results) and provider_outcomes["success"] == len(results),
+        "passed": all(result["passed"] for result in results)
+        and provider_outcomes["success"] == len(results),
         "provider": _provider_identity(results),
         "cases_passed": sum(result["passed"] for result in results),
         "cases_total": len(results),
@@ -166,7 +186,9 @@ def run_provider_suite(
         "costed_successful_evaluated_analyses": len(known_costs),
         "estimated_total_cost_usd": _decimal_string(total_cost),
         "estimated_cost_per_successful_evaluated_analysis_usd": (
-            _decimal_string(total_cost / len(successful)) if total_cost is not None and successful else None
+            _decimal_string(total_cost / len(successful))
+            if total_cost is not None and successful
+            else None
         ),
         "cost_unavailable_reason": cost_unavailable_reason,
         "results": results,
@@ -178,7 +200,9 @@ def _contains_all(values: list[Any], needles: list[str]) -> bool:
     return all(needle.lower() in text for needle in needles)
 
 
-def _contains_any(text: str, needles: tuple[str, ...] | list[str], case_sensitive: bool = False) -> bool:
+def _contains_any(
+    text: str, needles: tuple[str, ...] | list[str], case_sensitive: bool = False
+) -> bool:
     if not case_sensitive:
         text = text.lower()
         needles = [needle.lower() for needle in needles]
@@ -212,4 +236,90 @@ def _cost_decimal(value: Any) -> Decimal | None:
 
 
 def _decimal_string(value: Decimal | None) -> str | None:
-    return format(value.quantize(Decimal("0.00000001")), "f") if value is not None else None
+    return (
+        format(value.quantize(Decimal("0.00000001")), "f")
+        if value is not None
+        else None
+    )
+
+
+def run_comparison_suite(
+    cases: list[dict[str, Any]] | None = None,
+    config: LLMConfig | None = None,
+) -> dict[str, Any]:
+    """Compare the offline quality gate with one optional provider run.
+
+    The report contains summaries only, avoiding fixture content, prompts, model
+    output, or endpoint information.
+    """
+    selected_cases = cases if cases is not None else load_cases()
+    deterministic = run_suite(selected_cases)
+    provider = run_provider_suite(selected_cases, config)
+    quality_results_match = _quality_results_match(
+        deterministic["results"], provider["results"]
+    )
+    provider_outcomes = provider["provider_outcomes"]
+
+    return {
+        "schema_version": "week5-comparison-v1",
+        "deterministic": _suite_summary(deterministic),
+        "provider": {
+            "identity": provider["provider"],
+            "passed": provider["passed"],
+            "provider_outcomes": provider_outcomes,
+            "successful_evaluated_analyses": provider["successful_evaluated_analyses"],
+            "costed_successful_evaluated_analyses": provider[
+                "costed_successful_evaluated_analyses"
+            ],
+            "estimated_total_cost_usd": provider["estimated_total_cost_usd"],
+            "estimated_cost_per_successful_evaluated_analysis_usd": provider[
+                "estimated_cost_per_successful_evaluated_analysis_usd"
+            ],
+            "cost_unavailable_reason": provider["cost_unavailable_reason"],
+        },
+        "comparison": {
+            "quality_results_match": quality_results_match,
+            "fallbacks_observed": provider_outcomes["failure"]
+            + provider_outcomes["not_configured"],
+            "status": _comparison_status(
+                deterministic, provider, quality_results_match
+            ),
+        },
+    }
+
+
+def _suite_summary(suite: dict[str, Any]) -> dict[str, int | bool]:
+    return {
+        "passed": suite["passed"],
+        "cases_passed": suite["cases_passed"],
+        "cases_total": suite["cases_total"],
+        "checks_passed": suite["checks_passed"],
+        "checks_total": suite["checks_total"],
+    }
+
+
+def _quality_results_match(
+    deterministic: list[dict[str, Any]], provider: list[dict[str, Any]]
+) -> bool:
+    deterministic_scores = [
+        (result["id"], result["score"], result["rubric"]) for result in deterministic
+    ]
+    provider_scores = [
+        (result["id"], result["score"], result["rubric"]) for result in provider
+    ]
+    return deterministic_scores == provider_scores
+
+
+def _comparison_status(
+    deterministic: dict[str, Any], provider: dict[str, Any], quality_results_match: bool
+) -> str:
+    if not deterministic["passed"] or not quality_results_match:
+        return "deterministic_quality_gate_failed"
+    outcomes = provider["provider_outcomes"]
+    if outcomes["not_configured"]:
+        return "provider_not_configured"
+    if outcomes["failure"]:
+        return "provider_request_failed"
+    if provider["cost_unavailable_reason"] is not None:
+        return "incomplete_cost_data"
+    return "ready_to_compare"
