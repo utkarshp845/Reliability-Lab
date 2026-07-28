@@ -20,6 +20,18 @@ python -m evals.run_evals
 
 The command exits with a non-zero status when any case fails. CI and `make validate` run it as a release gate.
 
+## Versioned Machine-Readable Report
+
+Week 6, Day 1 makes the deterministic evaluation contract explicit. `apps/ai-sre-assistant/evals/manifest.json` versions the corpus, rubric, and strict acceptance threshold together.
+
+Run the CI-equivalent JSON report locally with:
+
+```bash
+python -m evals.run_evals --json
+```
+
+The report includes version metadata, case IDs, per-dimension results, hard-gate status, and aggregate counts. It intentionally excludes fixture paths, questions, evidence, prompts, generated output, credentials, and provider endpoints. The command remains deterministic, offline, and cost-free.
+
 ## Evaluation Corpus
 
 The cases live in `apps/ai-sre-assistant/evals/cases.json`. Their log evidence lives in `apps/ai-sre-assistant/evals/fixtures/`.

@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "corpus_version": "2026.07.1",
+  "rubric_version": "1.0",
+  "required_dimensions": [
+    "grounded",
+    "useful",
+    "safe",
+    "private",
+    "honest"
+  ],
+  "acceptance_threshold": {
+    "minimum_score": 5,
+    "require_all_dimensions": true
+  }
+}

@@ -199,3 +199,52 @@ def test_comparison_report_exercises_unconfigured_provider_fallback_end_to_end()
         "fallbacks_observed": 1,
         "status": "provider_not_configured",
     }
+
+
+def test_versioned_evaluation_report_is_stable_and_excludes_fixture_content():
+    from evals.runner import EVALUATION_REPORT_SCHEMA_VERSION, run_versioned_suite
+
+    report = run_versioned_suite(CASES[:2])
+
+    assert report["schema_version"] == EVALUATION_REPORT_SCHEMA_VERSION
+    assert report["report_type"] == "deterministic_evaluation"
+    assert report["corpus"] == {
+        "version": "2026.07.1",
+        "case_count": 2,
+        "case_ids": ["healthy-traffic", "error-spike"],
+    }
+    assert report["rubric"]["dimensions"] == [
+        "grounded",
+        "useful",
+        "safe",
+        "private",
+        "honest",
+    ]
+    assert report["summary"] == {
+        "passed": True,
+        "cases_passed": 2,
+        "cases_total": 2,
+        "checks_passed": 10,
+        "checks_total": 10,
+    }
+    assert report["hard_gates"] == {
+        "grounded": True,
+        "useful": True,
+        "safe": True,
+        "private": True,
+        "honest": True,
+    }
+    serialized = str(report)
+    assert "description" not in serialized
+    assert "log_fixture" not in serialized
+    assert "question" not in serialized
+
+
+def test_versioned_evaluation_report_rejects_manifest_that_weakens_hard_gates():
+    from evals.runner import load_manifest, run_versioned_suite
+
+    manifest = load_manifest()
+    manifest["acceptance_threshold"]["minimum_score"] = 4
+
+    with pytest.raises(ValueError, match="minimum_score"):
+        run_versioned_suite(CASES[:1], manifest)

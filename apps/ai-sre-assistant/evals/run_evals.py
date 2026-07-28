@@ -6,6 +6,7 @@ from evals.runner import (
     run_comparison_suite,
     run_provider_suite,
     run_suite,
+    run_versioned_suite,
 )
 
 
@@ -22,6 +23,11 @@ def main() -> int:
         action="store_true",
         help="Compare deterministic evaluation with an optional provider path and print a bounded JSON summary.",
     )
+    report_group.add_argument(
+        "--json",
+        action="store_true",
+        help="Run deterministic evaluation and print the versioned machine-readable report.",
+    )
     args = parser.parse_args()
 
     if args.provider_report:
@@ -33,6 +39,11 @@ def main() -> int:
         report = run_comparison_suite()
         print(json.dumps(report, indent=2, sort_keys=True))
         return 0 if report["deterministic"]["passed"] else 1
+
+    if args.json:
+        report = run_versioned_suite()
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0 if report["summary"]["passed"] else 1
 
     suite = run_suite()
     print("AI SRE Assistant evaluation")
