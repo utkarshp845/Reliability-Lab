@@ -803,3 +803,20 @@ Provider comparisons are useful only when they preserve the deterministic qualit
 Week 5 exit-gate review:
 
 The local learning path can now compare provider usage, reliability, and deployment-owned cost with deterministic evaluation outcomes while preserving the telemetry privacy boundary. Durable metering, provider-quality scoring, and managed-versus-private benchmarks remain later, deliberately bounded work.
+
+## Week 6, Day 1 - Versioned Evaluation Contract
+
+Today I made the deterministic evaluation gate reproducible across code changes.
+
+What changed:
+
+- Added a checked-in manifest that versions the evaluation corpus, rubric, and strict all-dimensions acceptance threshold together.
+- Added a machine-readable deterministic report with stable version metadata, case IDs, rubric outcomes, hard-gate status, and aggregate counts.
+- Kept fixture paths, questions, evidence, prompts, model output, credentials, and provider endpoints out of the report.
+- Switched CI to the same offline JSON evaluation path.
+
+Why this matters:
+
+An evaluation result is only comparable when the workload and pass criteria are known. Versioning the contract makes a regression report evidence rather than an unexplained score.
+
+Next: expand the sanitized corpus with adversarial, incorrect-confidence, and redaction edge cases.

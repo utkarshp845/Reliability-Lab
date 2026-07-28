@@ -43,4 +43,4 @@ jobs:
 
       - name: Evaluate ai-sre-assistant
         working-directory: apps/ai-sre-assistant
-        run: python -m evals.run_evals
+        run: python -m evals.run_evals --json

@@ -323,3 +323,71 @@ def _comparison_status(
     if provider["cost_unavailable_reason"] is not None:
         return "incomplete_cost_data"
     return "ready_to_compare"
+
+
+EVALUATION_REPORT_SCHEMA_VERSION = "1.0"
+
+
+def load_manifest(manifest_path: Path | None = None) -> dict[str, Any]:
+    path = manifest_path or EVALS_DIR / "manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    _validate_manifest(manifest)
+    return manifest
+
+
+def run_versioned_suite(
+    cases: list[dict[str, Any]] | None = None,
+    manifest: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Run deterministic evaluation and return a stable, privacy-safe report."""
+    manifest = load_manifest() if manifest is None else manifest
+    _validate_manifest(manifest)
+    suite = run_suite(cases)
+    results = suite["results"]
+    return {
+        "schema_version": EVALUATION_REPORT_SCHEMA_VERSION,
+        "report_type": "deterministic_evaluation",
+        "corpus": {
+            "version": manifest["corpus_version"],
+            "case_count": suite["cases_total"],
+            "case_ids": [result["id"] for result in results],
+        },
+        "rubric": {
+            "version": manifest["rubric_version"],
+            "dimensions": list(RUBRIC_DIMENSIONS),
+            "acceptance_threshold": manifest["acceptance_threshold"],
+        },
+        "summary": _suite_summary(suite),
+        "hard_gates": {
+            dimension: all(result["rubric"][dimension] for result in results)
+            for dimension in RUBRIC_DIMENSIONS
+        },
+        "results": [
+            {
+                "id": result["id"],
+                "passed": result["passed"],
+                "score": result["score"],
+                "max_score": result["max_score"],
+                "rubric": result["rubric"],
+            }
+            for result in results
+        ],
+    }
+
+
+def _validate_manifest(manifest: Any) -> None:
+    if not isinstance(manifest, dict):
+        raise ValueError("Evaluation manifest must be a JSON object.")
+    for field in ("schema_version", "corpus_version", "rubric_version"):
+        if not isinstance(manifest.get(field), str) or not manifest[field].strip():
+            raise ValueError(f"Evaluation manifest field '{field}' must be a non-empty string.")
+    if manifest.get("required_dimensions") != list(RUBRIC_DIMENSIONS):
+        raise ValueError("Evaluation manifest required_dimensions must match the evaluator rubric.")
+
+    threshold = manifest.get("acceptance_threshold")
+    if not isinstance(threshold, dict):
+        raise ValueError("Evaluation manifest acceptance_threshold must be an object.")
+    if threshold.get("minimum_score") != len(RUBRIC_DIMENSIONS):
+        raise ValueError("Evaluation manifest minimum_score must require every rubric dimension.")
+    if threshold.get("require_all_dimensions") is not True:
+        raise ValueError("Evaluation manifest must require every rubric dimension.")
