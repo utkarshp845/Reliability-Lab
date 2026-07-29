@@ -90,5 +90,44 @@
       "requires_redaction": true,
       "forbidden_output": ["sk-eval-secret-123456", "Bearer eval-private-token"]
     }
+  },
+  {
+    "id": "generic-server-error",
+    "description": "Generic server failures should stay grounded when logs do not prove one cause.",
+    "log_fixture": "generic-server-error.log",
+    "question": "Why are order requests failing?",
+    "expected": {
+      "summary_contains": "2 error event(s)",
+      "facts_contain": ["2 error events", "'503': 2"],
+      "guesses_contain": ["do not show a single clear cause"],
+      "next_steps_contain": ["most recent ERROR"],
+      "min_evidence": 2
+    }
+  },
+  {
+    "id": "mixed-latency-warning",
+    "description": "Latency and memory warnings should be reported as separate signals.",
+    "log_fixture": "mixed-latency-warning.log",
+    "question": "Are latency and memory pressure affecting the service?",
+    "expected": {
+      "summary_contains": "1 warning event(s), and 1 slow event(s)",
+      "facts_contain": ["0 error events", "1 warning events", "1 slow events"],
+      "guesses_contain": ["Latency is likely", "Memory warnings are likely"],
+      "next_steps_contain": ["slow requests are isolated"],
+      "min_evidence": 2
+    }
+  },
+  {
+    "id": "client-error-only",
+    "description": "A client-side 404 should not be misclassified as a server incident.",
+    "log_fixture": "client-error-only.log",
+    "question": "What do the recent client-side 404s show?",
+    "expected": {
+      "summary_contains": "do not show obvious incidents",
+      "facts_contain": ["0 error events", "'404': 1"],
+      "guesses_contain": ["mostly healthy"],
+      "next_steps_contain": ["Review the cited log evidence"],
+      "min_evidence": 0
+    }
   }
 ]

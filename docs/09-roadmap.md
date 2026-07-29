@@ -52,7 +52,8 @@ See [Provider Telemetry Contract](22-provider-telemetry.md) for the per-request 
 ## Week 6 - Evaluation Maturity
 
 - Day 1 - complete: version the deterministic corpus/rubric/threshold contract and emit a privacy-safe machine-readable report in CI.
-- Expand the corpus with sanitized incidents, adversarial inputs, prompt-injection cases, incorrect-confidence cases, and redaction edge cases.
+- Day 2 - complete: expand the sanitized deterministic corpus with generic server failures, mixed signals, and client-only errors.
+- Expand the corpus with adversarial inputs, prompt-injection cases, incorrect-confidence cases, and redaction edge cases.
 - Version the corpus, assistant configuration, and acceptance thresholds together.
 - Produce machine-readable evaluation results in CI.
 - Keep privacy and safety as hard release gates.

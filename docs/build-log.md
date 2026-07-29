@@ -820,3 +820,20 @@ Why this matters:
 An evaluation result is only comparable when the workload and pass criteria are known. Versioning the contract makes a regression report evidence rather than an unexplained score.
 
 Next: expand the sanitized corpus with adversarial, incorrect-confidence, and redaction edge cases.
+
+## Week 6, Day 2 - Sanitized Corpus Expansion
+
+Today I broadened the deterministic evaluation workload without changing the assistant’s behavior or adding provider dependencies.
+
+What changed:
+
+- Added a generic HTTP 503 case that requires the assistant to report failures without inventing a single root cause.
+- Added a mixed-signal case with a slow request and a memory warning, requiring separate operational interpretations.
+- Added a client-only HTTP 404 case so normal server health is not confused with a server-side outage.
+- Bumped the corpus contract to `2026.07.2`; the versioned report now contains 10 cases and 50 required rubric checks.
+
+Why this matters:
+
+A useful corpus needs more than obvious failures. It should distinguish incomplete evidence, independent symptoms, and client behavior from genuine service incidents while remaining fully synthetic and safe to share.
+
+Next: add adversarial and incorrect-confidence cases without weakening the deterministic privacy and safety gates.
