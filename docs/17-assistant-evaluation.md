@@ -45,6 +45,9 @@ The cases live in `apps/ai-sre-assistant/evals/cases.json`. Their log evidence l
 | Malformed log | Makes damaged evidence visible instead of silently ignoring it. |
 | Missing logs | Says that evidence is missing and gives practical collection steps. |
 | Secret in evidence | Redacts structured credentials and tokens before returning evidence. |
+| Generic server error | Keeps an upstream-style HTTP 503 grounded when logs do not prove one root cause. |
+| Mixed latency and warning | Separates slow requests from memory-warning evidence. |
+| Client error only | Does not misclassify an HTTP 404 as a server incident. |
 
 These are deterministic regression cases. They test the current rule-based path without making network calls or spending provider tokens.
 
