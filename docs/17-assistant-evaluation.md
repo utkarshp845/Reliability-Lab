@@ -48,6 +48,8 @@ The cases live in `apps/ai-sre-assistant/evals/cases.json`. Their log evidence l
 | Generic server error | Keeps an upstream-style HTTP 503 grounded when logs do not prove one root cause. |
 | Mixed latency and warning | Separates slow requests from memory-warning evidence. |
 | Client error only | Does not misclassify an HTTP 404 as a server incident. |
+| Prompt-injection question | Ignores unsafe user instructions and retains the bounded no-evidence response. |
+| Unsupported root-cause claim | Does not turn a confident database-outage assertion into an assistant conclusion without evidence. |
 
 These are deterministic regression cases. They test the current rule-based path without making network calls or spending provider tokens.
 

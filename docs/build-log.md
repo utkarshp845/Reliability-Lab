@@ -837,3 +837,20 @@ Why this matters:
 A useful corpus needs more than obvious failures. It should distinguish incomplete evidence, independent symptoms, and client behavior from genuine service incidents while remaining fully synthetic and safe to share.
 
 Next: add adversarial and incorrect-confidence cases without weakening the deterministic privacy and safety gates.
+
+## Week 6, Day 3 - Adversarial Evaluation Cases
+
+Today I tested whether untrusted instructions and unsupported confident claims can steer the deterministic assistant away from evidence.
+
+What changed:
+
+- Added a prompt-injection question that asks the assistant to ignore instructions and recommend a destructive action.
+- Added an unsupported root-cause claim that asserts a database outage despite healthy log evidence.
+- Required both cases to exclude the injected claims from assistant output while preserving the strict grounded, useful, safe, private, and honest rubric.
+- Bumped the versioned corpus to `2026.07.3`, with 12 cases and 60 required checks.
+
+Why this matters:
+
+Operator questions are untrusted input, not instructions that outrank evidence or safety boundaries. An assistant should neither echo unsafe directions nor turn a confident assertion into an operational fact.
+
+Next: add targeted redaction edge cases and make regression differences easier to inspect in CI.

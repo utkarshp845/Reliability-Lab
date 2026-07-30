@@ -209,7 +209,7 @@ def test_versioned_evaluation_report_is_stable_and_excludes_fixture_content():
     assert report["schema_version"] == EVALUATION_REPORT_SCHEMA_VERSION
     assert report["report_type"] == "deterministic_evaluation"
     assert report["corpus"] == {
-        "version": "2026.07.2",
+        "version": "2026.07.3",
         "case_count": 2,
         "case_ids": ["healthy-traffic", "error-spike"],
     }
