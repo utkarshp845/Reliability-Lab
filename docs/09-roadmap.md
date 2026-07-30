@@ -53,7 +53,8 @@ See [Provider Telemetry Contract](22-provider-telemetry.md) for the per-request 
 
 - Day 1 - complete: version the deterministic corpus/rubric/threshold contract and emit a privacy-safe machine-readable report in CI.
 - Day 2 - complete: expand the sanitized deterministic corpus with generic server failures, mixed signals, and client-only errors.
-- Expand the corpus with adversarial inputs, prompt-injection cases, incorrect-confidence cases, and redaction edge cases.
+- Day 3 - complete: add adversarial prompt-injection and unsupported-root-cause cases that enforce safe, evidence-grounded behavior.
+- Expand the corpus with additional redaction edge cases.
 - Version the corpus, assistant configuration, and acceptance thresholds together.
 - Produce machine-readable evaluation results in CI.
 - Keep privacy and safety as hard release gates.
