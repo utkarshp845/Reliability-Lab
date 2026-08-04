@@ -1,0 +1,16 @@
+version: 2
+
+# Reliability Lab's AI SRE Assistant evaluation suite deliberately exercises
+# real provider token shapes (JWT, AWS-style access key, GitHub-style PAT,
+# Bearer token, OpenAI-style key) so its redaction module has something real
+# to catch. Where possible those values are assembled from split literal
+# fragments at test time in evals/synthetic_secrets.py, so no committed file
+# contains one of these token shapes as a contiguous string. The remaining
+# low-entropy fixtures under evals/fixtures/ are also fabricated and
+# non-functional. See the "Synthetic Secrets In The Evaluation Corpus"
+# section of docs/15-secret-handling-and-redaction.md. None of these values
+# are ever real credentials, so scanner findings inside this path are
+# expected and intentionally ignored rather than treated as incidents.
+secret:
+  ignored-paths:
+    - apps/ai-sre-assistant/evals/fixtures/**

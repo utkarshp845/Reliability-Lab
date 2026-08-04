@@ -82,6 +82,14 @@ Redaction does not:
 
 Prevent sensitive logging at the source, keep the rule-based path available, and review data before sharing it externally.
 
+## Synthetic Secrets In The Evaluation Corpus
+
+The deterministic evaluation suite needs real provider token shapes, such as JWT-, AWS access-key-, GitHub-token-, and Bearer-token-shaped values, so its redaction module has something real to catch. See [Assistant Evaluation Basics](17-assistant-evaluation.md) for the redaction cases.
+
+`apps/ai-sre-assistant/evals/synthetic_secrets.py` assembles the JWT, AWS-style key, and GitHub-style token values from split literal fragments at test time, so no committed file contains one of these shapes as a contiguous string. `apps/ai-sre-assistant/evals/fixtures/` also contains a small number of low-entropy, non-standard-length fixture secrets (for example `secret-in-evidence.log`) that are fabricated in the same spirit.
+
+None of these values are ever real credentials. A pattern- or shape-based secret scanner cannot always tell a synthetic redaction fixture from a leaked credential, so an automated scan of this repository may still flag one. `.gitguardian.yaml` at the repository root records that `evals/fixtures/` is expected to contain synthetic secrets and is not an incident.
+
 ## Verification
 
 Focused tests cover:

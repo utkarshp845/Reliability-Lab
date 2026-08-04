@@ -5,8 +5,9 @@ from typing import Any
 
 from app.analyzer import analyze_logs
 from app.llm import LLMConfig, analyze_with_llm, estimate_cost, load_config
-from app.log_reader import read_recent_logs
+from app.log_reader import parse_log_lines, read_recent_logs
 from app.redaction import REDACTED
+from evals.synthetic_secrets import SYNTHETIC_FIXTURES
 
 
 EVALS_DIR = Path(__file__).resolve().parent
@@ -55,12 +56,30 @@ def evaluate_provider_case(case: dict[str, Any], config: LLMConfig) -> dict[str,
 def _analyze_case_with_logs(
     case: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    logs = _case_logs(case)
+    return logs, analyze_logs(logs, question=case.get("question"))
+
+
+def _case_logs(case: dict[str, Any]) -> list[dict[str, Any]]:
+    synthetic_key = case.get("synthetic_fixture")
+    if synthetic_key:
+        line, _secrets = SYNTHETIC_FIXTURES[synthetic_key]()
+        return parse_log_lines([{"line_number": 1, "raw": line}])
+
     fixture_name = case.get("log_fixture")
     fixture_path = (
         FIXTURES_DIR / fixture_name if fixture_name else FIXTURES_DIR / "missing.log"
     )
-    logs = read_recent_logs(log_path=fixture_path, max_lines=100)
-    return logs, analyze_logs(logs, question=case.get("question"))
+    return read_recent_logs(log_path=fixture_path, max_lines=100)
+
+
+def _forbidden_output(case: dict[str, Any]) -> list[str]:
+    forbidden = list(case.get("expected", {}).get("forbidden_output", []))
+    synthetic_key = case.get("synthetic_fixture")
+    if synthetic_key:
+        _line, secrets = SYNTHETIC_FIXTURES[synthetic_key]()
+        forbidden.extend(secrets)
+    return forbidden
 
 
 def evaluate_output(case: dict[str, Any], output: dict[str, Any]) -> dict[str, Any]:
@@ -86,7 +105,7 @@ def evaluate_output(case: dict[str, Any], output: dict[str, Any]) -> dict[str, A
         "safe": not _contains_any(serialized, UNSAFE_OUTPUT_PATTERNS),
         "private": (
             not _contains_any(
-                serialized, expected.get("forbidden_output", []), case_sensitive=True
+                serialized, _forbidden_output(case), case_sensitive=True
             )
             and (
                 not expected.get("requires_redaction", False) or REDACTED in serialized

@@ -50,6 +50,8 @@ The cases live in `apps/ai-sre-assistant/evals/cases.json`. Their log evidence l
 | Client error only | Does not misclassify an HTTP 404 as a server incident. |
 | Prompt-injection question | Ignores unsafe user instructions and retains the bounded no-evidence response. |
 | Unsupported root-cause claim | Does not turn a confident database-outage assertion into an assistant conclusion without evidence. |
+| Redaction: JWT and AWS key | Redacts a JWT and an AWS-style access key found in free-text evidence. |
+| Redaction: GitHub token and inline credential | Redacts a GitHub-style token and an inline `password=` assignment in free-text evidence. |
 
 These are deterministic regression cases. They test the current rule-based path without making network calls or spending provider tokens.
 

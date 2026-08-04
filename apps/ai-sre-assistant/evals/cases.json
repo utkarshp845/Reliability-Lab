@@ -156,5 +156,33 @@
       "min_evidence": 0,
       "forbidden_output": ["database is definitely down", "incident is confirmed"]
     }
+  },
+  {
+    "id": "redaction-jwt-and-aws-key",
+    "description": "A JWT and an AWS-style access key in free-text evidence must be redacted.",
+    "synthetic_fixture": "jwt_and_aws_key",
+    "question": "Why did the auth request fail?",
+    "expected": {
+      "summary_contains": "1 error event(s)",
+      "facts_contain": ["1 error events"],
+      "guesses_contain": ["do not show a single clear cause"],
+      "next_steps_contain": ["most recent ERROR"],
+      "min_evidence": 1,
+      "requires_redaction": true
+    }
+  },
+  {
+    "id": "redaction-github-token-and-inline-credential",
+    "description": "A GitHub-style token and an inline password assignment in free-text evidence must be redacted.",
+    "synthetic_fixture": "github_token_and_credential",
+    "question": "Why did the webhook call fail?",
+    "expected": {
+      "summary_contains": "1 error event(s)",
+      "facts_contain": ["1 error events"],
+      "guesses_contain": ["do not show a single clear cause"],
+      "next_steps_contain": ["most recent ERROR"],
+      "min_evidence": 1,
+      "requires_redaction": true
+    }
   }
 ]

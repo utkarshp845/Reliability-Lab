@@ -854,3 +854,30 @@ Why this matters:
 Operator questions are untrusted input, not instructions that outrank evidence or safety boundaries. An assistant should neither echo unsafe directions nor turn a confident assertion into an operational fact.
 
 Next: add targeted redaction edge cases and make regression differences easier to inspect in CI.
+
+## Week 6, Day 4 - Redaction Edge Cases
+
+Today I widened the redaction check beyond the single Bearer-token-and-API-key case from Week 4.
+
+What changed:
+
+- Added a case where a JWT and an AWS-style access key appear together in free-text log evidence.
+- Added a case where a GitHub-style token and an inline `password=` assignment appear together in free-text log evidence.
+- Kept both cases on the strict grounded, useful, safe, private, and honest rubric, with `requires_redaction` enforcing that `[REDACTED]` appears and the raw secrets never do.
+- Added `evals/synthetic_secrets.py`, which assembles each JWT, AWS-style key, and GitHub-style token from split literal fragments at test time instead of storing it as one contiguous string in a committed file.
+- Added `.gitguardian.yaml` documenting that `evals/fixtures/` intentionally contains fabricated, non-functional secret-shaped values.
+- Bumped the versioned corpus to `2026.07.4`, with 14 cases and 70 required checks.
+
+Why this matters:
+
+The existing secret case only exercised one token pattern and one structured field. Real evidence text mixes secret shapes together, and the evaluator should catch a regression in any one pattern, not just the first one written.
+
+Lessons learned:
+
+- Evidence text is the leak surface that matters most: the analyzer only carries a fixed set of fields into evidence, so free-text messages are where redaction coverage earns its keep.
+- Each token pattern deserves its own regression case; a single passing case can hide a broken pattern next to it.
+- A redaction test suite and a secret scanner are adversarial by design: a fixture built to exercise a real provider token shape will always look like a leak to a shape-based scanner, because the scanner matches structure, not intent.
+- Renaming a fake secret's content is not enough for a structural detector such as a JWT or AWS-key pattern; it still matches regardless of entropy. Assembling the value from split fragments at test time, so no committed file ever contains the shape as a contiguous string, removes the trigger instead of asking a scanner to trust an ignore rule.
+- Every commit in a pull request's history gets scanned, not just the final diff; a later commit that "fixes" a fixture does not un-expose an earlier one. The dependable fix touches history, not just the tip commit.
+
+Next: make regression differences easier to inspect in CI.
