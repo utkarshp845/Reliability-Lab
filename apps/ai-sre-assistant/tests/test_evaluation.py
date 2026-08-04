@@ -47,6 +47,50 @@ def test_evaluation_detects_secret_regression():
     assert result["rubric"]["private"] is False
 
 
+def test_evaluation_detects_leaked_jwt_and_aws_key_regression():
+    from evals.synthetic_secrets import jwt_and_aws_key_case
+
+    case = next(case for case in CASES if case["id"] == "redaction-jwt-and-aws-key")
+    _line, secrets = jwt_and_aws_key_case()
+    output = {
+        "summary": "Recent logs show 1 error event(s).",
+        "facts": ["Found 1 error events."],
+        "guesses": ["The available logs do not show a single clear cause."],
+        "evidence": [{"message": f"token {secrets[0]} rejected; leaked key {secrets[1]}"}],
+        "next_steps": ["Start with the most recent ERROR event."],
+        "possible_fixes": ["Inspect error log evidence."],
+    }
+
+    result = evaluate_output(case, output)
+
+    assert result["passed"] is False
+    assert result["rubric"]["private"] is False
+
+
+def test_evaluation_detects_leaked_github_token_and_password_regression():
+    from evals.synthetic_secrets import github_token_and_credential_case
+
+    case = next(
+        case
+        for case in CASES
+        if case["id"] == "redaction-github-token-and-inline-credential"
+    )
+    _line, secrets = github_token_and_credential_case()
+    output = {
+        "summary": "Recent logs show 1 error event(s).",
+        "facts": ["Found 1 error events."],
+        "guesses": ["The available logs do not show a single clear cause."],
+        "evidence": [{"message": f"webhook auth failed with {secrets[0]} and password={secrets[1]}"}],
+        "next_steps": ["Start with the most recent ERROR event."],
+        "possible_fixes": ["Inspect error log evidence."],
+    }
+
+    result = evaluate_output(case, output)
+
+    assert result["passed"] is False
+    assert result["rubric"]["private"] is False
+
+
 def test_provider_report_calculates_cost_per_successful_evaluated_analysis(monkeypatch):
     from decimal import Decimal
 
@@ -209,7 +253,7 @@ def test_versioned_evaluation_report_is_stable_and_excludes_fixture_content():
     assert report["schema_version"] == EVALUATION_REPORT_SCHEMA_VERSION
     assert report["report_type"] == "deterministic_evaluation"
     assert report["corpus"] == {
-        "version": "2026.07.3",
+        "version": "2026.07.4",
         "case_count": 2,
         "case_ids": ["healthy-traffic", "error-spike"],
     }
