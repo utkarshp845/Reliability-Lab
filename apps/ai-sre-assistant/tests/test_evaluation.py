@@ -292,3 +292,74 @@ def test_versioned_evaluation_report_rejects_manifest_that_weakens_hard_gates():
 
     with pytest.raises(ValueError, match="minimum_score"):
         run_versioned_suite(CASES[:1], manifest)
+
+
+def test_diff_reports_identical_runs_show_no_changes():
+    from evals.runner import diff_versioned_reports, run_versioned_suite
+
+    report = run_versioned_suite(CASES[:2])
+
+    diff = diff_versioned_reports(report, report)
+
+    assert diff["corpus_version_changed"] is False
+    assert diff["cases_added"] == []
+    assert diff["cases_removed"] == []
+    assert diff["status_changes"] == []
+    assert diff["regressions"] == []
+    assert diff["fixed"] == []
+    assert diff["hard_gate_regressions"] == []
+    assert diff["has_regression"] is False
+
+
+def test_diff_reports_detects_case_regression_and_hard_gate_regression():
+    from evals.runner import diff_versioned_reports, run_versioned_suite
+
+    baseline = run_versioned_suite(CASES[:2])
+    current = run_versioned_suite(CASES[:2])
+    regressed_case = dict(current["results"][0])
+    regressed_case["passed"] = False
+    current["results"] = [regressed_case, current["results"][1]]
+    current["hard_gates"] = {**current["hard_gates"], "private": False}
+
+    diff = diff_versioned_reports(baseline, current)
+
+    assert diff["status_changes"] == [
+        {
+            "id": regressed_case["id"],
+            "baseline_passed": True,
+            "current_passed": False,
+        }
+    ]
+    assert diff["regressions"] == [regressed_case["id"]]
+    assert diff["fixed"] == []
+    assert diff["hard_gate_regressions"] == ["private"]
+    assert diff["has_regression"] is True
+
+
+def test_diff_reports_detects_added_and_removed_cases():
+    from evals.runner import diff_versioned_reports, run_versioned_suite
+
+    baseline = run_versioned_suite(CASES[:1])
+    current = run_versioned_suite(CASES[:2])
+
+    diff = diff_versioned_reports(baseline, current)
+
+    assert diff["cases_added"] == [CASES[1]["id"]]
+    assert diff["cases_removed"] == []
+    assert diff["has_regression"] is False
+
+
+def test_diff_reports_recognizes_a_fixed_case_without_flagging_regression():
+    from evals.runner import diff_versioned_reports, run_versioned_suite
+
+    baseline = run_versioned_suite(CASES[:2])
+    fixed_case = dict(baseline["results"][0])
+    fixed_case["passed"] = False
+    baseline = {**baseline, "results": [fixed_case, baseline["results"][1]]}
+    current = run_versioned_suite(CASES[:2])
+
+    diff = diff_versioned_reports(baseline, current)
+
+    assert diff["fixed"] == [fixed_case["id"]]
+    assert diff["regressions"] == []
+    assert diff["has_regression"] is False

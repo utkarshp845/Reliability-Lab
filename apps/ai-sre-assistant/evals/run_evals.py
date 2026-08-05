@@ -1,8 +1,10 @@
 import argparse
 import json
+from pathlib import Path
 
 from evals.runner import (
     RUBRIC_DIMENSIONS,
+    diff_versioned_reports,
     run_comparison_suite,
     run_provider_suite,
     run_suite,
@@ -28,7 +30,23 @@ def main() -> int:
         action="store_true",
         help="Run deterministic evaluation and print the versioned machine-readable report.",
     )
+    report_group.add_argument(
+        "--diff",
+        metavar="BASELINE_JSON",
+        help=(
+            "Run deterministic evaluation, compare it against an earlier "
+            "--json report saved at BASELINE_JSON, and print a bounded diff "
+            "of case status changes and hard-gate regressions."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.diff:
+        baseline = json.loads(Path(args.diff).read_text(encoding="utf-8"))
+        current = run_versioned_suite()
+        diff = diff_versioned_reports(baseline, current)
+        print(json.dumps(diff, indent=2, sort_keys=True))
+        return 0 if current["summary"]["passed"] and not diff["has_regression"] else 1
 
     if args.provider_report:
         suite = run_provider_suite()
