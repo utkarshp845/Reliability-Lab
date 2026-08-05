@@ -107,3 +107,23 @@ python -m evals.run_evals --comparison-report
 It runs the deterministic corpus and the selected optional-provider path against the same fixtures, then reports the two quality summaries, bounded provider/model identity, outcome counts, fallback count, and estimated cost summary. `comparison.status` is `ready_to_compare` only when deterministic quality passes, the provider succeeds for every case, and cost is complete. Other explicit states distinguish unconfigured providers, request failures, incomplete cost data, and deterministic-gate failures.
 
 The command prints summaries only: it excludes fixture evidence, prompts, provider output, credentials, and endpoints. It is opt-in and outside CI because a configured provider makes one call per fixture. With `LLM_PROVIDER=none`, it is an offline end-to-end check that verifies the deterministic fallback remains available.
+
+## Regression Diff
+
+Week 6, Day 5 makes a versioned report easy to compare, not only easy to parse.
+
+Save a baseline report, then diff the current corpus against it:
+
+```bash
+python -m evals.run_evals --json > baseline.json
+python -m evals.run_evals --diff baseline.json
+```
+
+A typical use is comparing a pull request's evaluation report against `main`'s: check out `main`, save its `--json` output as the baseline, check out the branch again, then run `--diff` against that file. The output stays bounded to case IDs, pass/fail booleans, and rubric dimension names:
+
+- `cases_added` / `cases_removed` when the corpus itself changed.
+- `status_changes` for any case whose pass/fail flipped, split into `regressions` (previously passing, now failing) and `fixed` (previously failing, now passing).
+- `hard_gate_regressions` for any rubric dimension that used to hold across every case and no longer does.
+- `corpus_version_changed` when the manifest version moved.
+
+The command exits non-zero when the current run fails its own acceptance threshold, or when the diff shows a regression, so a reviewer does not have to read two full JSON reports side by side to notice one case quietly stopped passing.

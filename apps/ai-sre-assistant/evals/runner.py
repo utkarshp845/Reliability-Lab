@@ -394,6 +394,73 @@ def run_versioned_suite(
     }
 
 
+DIFF_REPORT_SCHEMA_VERSION = "week6-diff-v1"
+
+
+def diff_versioned_reports(
+    baseline: dict[str, Any], current: dict[str, Any]
+) -> dict[str, Any]:
+    """Compare two versioned evaluation reports and surface what changed.
+
+    Both reports are expected to come from `run_versioned_suite` (or an
+    equivalent `--json` report saved earlier). The diff stays bounded to case
+    IDs, pass/fail booleans, and rubric dimension names, matching the same
+    privacy boundary the versioned report already keeps.
+    """
+    baseline_results = {result["id"]: result for result in baseline.get("results", [])}
+    current_results = {result["id"]: result for result in current.get("results", [])}
+    baseline_ids = set(baseline_results)
+    current_ids = set(current_results)
+
+    status_changes = [
+        {
+            "id": case_id,
+            "baseline_passed": baseline_results[case_id]["passed"],
+            "current_passed": current_results[case_id]["passed"],
+        }
+        for case_id in sorted(baseline_ids & current_ids)
+        if baseline_results[case_id]["passed"] != current_results[case_id]["passed"]
+    ]
+    regressions = sorted(
+        change["id"]
+        for change in status_changes
+        if change["baseline_passed"] and not change["current_passed"]
+    )
+    fixed = sorted(
+        change["id"]
+        for change in status_changes
+        if not change["baseline_passed"] and change["current_passed"]
+    )
+
+    baseline_hard_gates = baseline.get("hard_gates", {})
+    current_hard_gates = current.get("hard_gates", {})
+    hard_gate_regressions = [
+        dimension
+        for dimension in RUBRIC_DIMENSIONS
+        if baseline_hard_gates.get(dimension) is True
+        and current_hard_gates.get(dimension) is False
+    ]
+
+    return {
+        "schema_version": DIFF_REPORT_SCHEMA_VERSION,
+        "report_type": "deterministic_evaluation_diff",
+        "baseline_corpus_version": baseline.get("corpus", {}).get("version"),
+        "current_corpus_version": current.get("corpus", {}).get("version"),
+        "corpus_version_changed": (
+            baseline.get("corpus", {}).get("version")
+            != current.get("corpus", {}).get("version")
+        ),
+        "cases_added": sorted(current_ids - baseline_ids),
+        "cases_removed": sorted(baseline_ids - current_ids),
+        "status_changes": status_changes,
+        "regressions": regressions,
+        "fixed": fixed,
+        "hard_gate_regressions": hard_gate_regressions,
+        "current_summary": current.get("summary"),
+        "has_regression": bool(regressions) or bool(hard_gate_regressions),
+    }
+
+
 def _validate_manifest(manifest: Any) -> None:
     if not isinstance(manifest, dict):
         raise ValueError("Evaluation manifest must be a JSON object.")

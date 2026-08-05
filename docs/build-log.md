@@ -881,3 +881,31 @@ Lessons learned:
 - Every commit in a pull request's history gets scanned, not just the final diff; a later commit that "fixes" a fixture does not un-expose an earlier one. The dependable fix touches history, not just the tip commit.
 
 Next: make regression differences easier to inspect in CI.
+
+## Week 6, Day 5 - Regression Diff And Week Closeout
+
+Today I closed Week 6 by making the versioned report easy to compare, not only easy to parse, and reviewed the week against its exit gate.
+
+What changed:
+
+- Added `diff_versioned_reports`, which compares two `--json` reports and returns which case IDs were added or removed, which cases flipped pass/fail (split into `regressions` and `fixed`), which rubric dimension lost its hard gate, and whether the corpus version moved.
+- Added `python -m evals.run_evals --diff BASELINE_JSON`, which runs the current corpus, diffs it against a saved baseline report, and exits non-zero on either a failing current run or a detected regression.
+- Kept the diff bounded to case IDs, pass/fail booleans, and dimension names, the same privacy boundary the versioned report already holds.
+- Added regression tests for identical runs, a case regression, an added/removed case, and a fixed case, plus a CLI-level test exercising `--diff` end to end.
+- Replaced the leftover Week 6 bullets with a single Day 5 line; they restated what Day 1 had already shipped.
+
+Why this matters:
+
+A machine-readable report only helps a reviewer if they can tell what changed. Two full JSON dumps from two different runs bury the one line that matters, a case ID whose `passed` value flipped, inside dozens of unchanged fields. The diff makes that comparison the artifact.
+
+Week 6 exit-gate review:
+
+The exit gate asked for a repeatable regression report that cannot bypass required privacy or safety checks. That has been true since Day 1's hard-gate enforcement, and the corpus has since grown from 7 to 14 cases across generic failures, mixed signals, client-only errors, adversarial prompts, unsupported claims, and now multi-pattern redaction. Day 5 closes the remaining gap: the report is not just produced, it is easy to act on.
+
+Lessons learned:
+
+- A versioned report and a diff of two versioned reports are different tools; the report proves what happened, the diff proves what changed.
+- Keeping the diff to the same bounded fields as the report avoids reopening the privacy boundary just to make regressions readable.
+- A regression report earns its exit gate only once someone can look at it and immediately know what to do next.
+
+Next: start Week 7 with structured stdout logs and cross-service correlation fields.

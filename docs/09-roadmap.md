@@ -55,9 +55,7 @@ See [Provider Telemetry Contract](22-provider-telemetry.md) for the per-request 
 - Day 2 - complete: expand the sanitized deterministic corpus with generic server failures, mixed signals, and client-only errors.
 - Day 3 - complete: add adversarial prompt-injection and unsupported-root-cause cases that enforce safe, evidence-grounded behavior.
 - Day 4 - complete: expand the corpus with redacted JWT, AWS-style key, GitHub-style token, and inline-credential edge cases.
-- Version the corpus, assistant configuration, and acceptance thresholds together.
-- Produce machine-readable evaluation results in CI.
-- Keep privacy and safety as hard release gates.
+- Day 5 - complete: add a bounded regression diff between two versioned reports so a case or hard-gate regression is easy to spot in a pull request.
 
 **Exit gate:** a model, prompt, provider, or code change produces a repeatable regression report and cannot bypass required privacy or safety checks.
 
