@@ -1,15 +1,19 @@
+from time import perf_counter
 from typing import Any
+from uuid import uuid4
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Request, Response
 from pydantic import BaseModel, Field
 
 from app.analyzer import analyze_logs
 from app.llm import analyze_with_llm, cost_controls_summary, estimate_cost, load_config
 from app.log_reader import get_log_path, read_recent_logs
+from app.logging_config import logger
 from app.metrics_analyzer import analyze_metrics, combined_incident_analysis
 from app.metrics_reader import fetch_metrics_text, get_metrics_url, parse_prometheus_text
 from app.provider_metrics import PROVIDER_METRICS
 from app.redaction import redact_data, redact_text
+from app.request_context import current_request_id, reset_request_id, set_request_id
 
 
 app = FastAPI(
@@ -17,6 +21,47 @@ app = FastAPI(
     description="An evidence-grounded operational assistant for the demo-service.",
     version="0.1.0",
 )
+
+
+@app.middleware("http")
+async def record_requests(request: Request, call_next):
+    # Same header and field name demo-service uses, so a shared request_id
+    # can be threaded through an operator workflow that touches both services.
+    request_id = request.headers.get("x-request-id", str(uuid4()))
+    request_id_token = set_request_id(request_id)
+    start = perf_counter()
+    status_code = 500
+
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        response.headers["x-request-id"] = request_id
+        return response
+    except Exception:
+        logger.exception(
+            "unhandled_request_error",
+            extra={
+                "event": "unhandled_request_error",
+                "method": request.method,
+                "path": request.url.path,
+                "request_id": request_id,
+            },
+        )
+        raise
+    finally:
+        duration_ms = round((perf_counter() - start) * 1000, 2)
+        logger.info(
+            "request_completed",
+            extra={
+                "event": "request_completed",
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": status_code,
+                "duration_ms": duration_ms,
+                "request_id": request_id,
+            },
+        )
+        reset_request_id(request_id_token)
 
 
 class AnalyzeLogsRequest(BaseModel):
@@ -87,6 +132,7 @@ def summarize_incident(request: SummarizeIncidentRequest) -> dict[str, Any]:
         "analysis_mode": "rule-based",
         "log_path": log_response["log_path"],
         "logs_read": log_response["logs_read"],
+        "correlated_request_ids": log_response["correlated_request_ids"],
         "metrics_source": metrics_response.get("metrics_source"),
         "metrics_notice": metrics_response.get("metrics_notice"),
         "log_analysis": log_analysis,
@@ -125,6 +171,7 @@ def _analyze(question: str, max_lines: int, use_llm: bool) -> dict[str, Any]:
         "analysis_mode": "rule-based",
         "log_path": str(log_path),
         "logs_read": len(logs),
+        "correlated_request_ids": rule_based["correlated_request_ids"],
         "rule_based_analysis": rule_based,
     }
 
@@ -144,6 +191,17 @@ def _analyze(question: str, max_lines: int, use_llm: bool) -> dict[str, Any]:
             response["llm_analysis"] = llm_result.analysis
         if llm_result.notice:
             response["llm_notice"] = llm_result.notice
+
+    logger.info(
+        "analysis_completed",
+        extra={
+            "event": "analysis_completed",
+            "analysis_mode": response["analysis_mode"],
+            "logs_read": len(logs),
+            "correlated_request_ids": response["correlated_request_ids"],
+            "request_id": current_request_id(),
+        },
+    )
 
     return redact_data(response)
 

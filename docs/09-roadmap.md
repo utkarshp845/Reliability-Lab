@@ -61,7 +61,7 @@ See [Provider Telemetry Contract](22-provider-telemetry.md) for the per-request 
 
 ## Week 7 - Production Signal Path
 
-- Standardize structured stdout logs and cross-service correlation fields.
+- Day 1 - complete: give `ai-sre-assistant` structured JSON stdout logs in the same shape as `demo-service`, plus a shared `request_id` field and a `correlated_request_ids` list that ties an assistant analysis back to the demo-service requests it read.
 - Add an optional OpenTelemetry Collector path after signal contracts are stable.
 - Add a small dashboard and one actionable, owned alert.
 - Exercise one incident from alert through evidence, assistant analysis, runbook action, and recovery review.

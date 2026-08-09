@@ -909,3 +909,28 @@ Lessons learned:
 - A regression report earns its exit gate only once someone can look at it and immediately know what to do next.
 
 Next: start Week 7 with structured stdout logs and cross-service correlation fields.
+
+## Week 7, Day 1 - Structured Assistant Logs And Cross-Service Correlation
+
+Today I started Week 7 by giving `ai-sre-assistant` the same structured logging contract `demo-service` has had since Week 1-2, and linking the two services together on a shared correlation field.
+
+What changed:
+
+- Added `app/logging_config.py` to `ai-sre-assistant`, emitting the same JSON shape as `demo-service` (`timestamp`, `level`, `service`, `logger`, `message`, plus per-event extras) to stdout.
+- Added `app/request_context.py` and a request middleware so `ai-sre-assistant` accepts an incoming `X-Request-ID` header, generates one when missing, returns it in the `x-request-id` response header, and logs a `request_completed` event per call, matching `demo-service`'s existing contract field for field.
+- Added `analysis_completed` logging around `/analyze/logs`, `/ask`, and `/summarize-incident`, including the assistant's own `request_id`, `logs_read`, and `analysis_mode`.
+- Added `correlated_request_ids` to `analyze_logs()` and to the three analysis endpoint responses: the distinct `request_id` values pulled from the `demo-service` log evidence used for that analysis, and added `request_id` to the cited evidence entries themselves.
+- Logged unhandled request errors with `logger.exception` under the same `unhandled_request_error` event name `demo-service` already uses.
+- Added `docs/04-observability-basics.md#cross-service-correlation` documenting the shared log shape and the two correlation fields.
+
+Why this matters:
+
+Before today, `ai-sre-assistant` read `demo-service`'s structured logs but produced none of its own, so there was no way to see the assistant's side of an incident: which analysis ran, how long it took, or whether it fell back to the rule-based path. A collector-ready service should be as observable as the service it is diagnosing. Adding `correlated_request_ids` also makes the assistant's grounding checkable: a reviewer can confirm an analysis's claims trace back to specific `demo-service` requests instead of trusting a summary on faith.
+
+Lessons learned:
+
+- "Standardize" is cheapest when it means reusing the exact field names and header convention a sibling service already validated, not inventing a parallel one.
+- A correlation ID is only useful cross-service if the field name matches on both sides; `request_id` already meant the same thing in both services' log evidence, so the natural move was to reuse it rather than add a second `correlation_id` concept.
+- Surfacing the linked IDs in the API response, not only in logs, means an operator following an alert can see the connection without first finding the raw log line.
+
+Next: add an optional OpenTelemetry Collector path once these signal contracts have proven stable, then a small dashboard and one owned alert.
