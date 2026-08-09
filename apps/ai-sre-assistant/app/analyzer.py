@@ -30,8 +30,29 @@ def _is_error(entry: dict[str, Any]) -> bool:
 
 
 def _evidence(entry: dict[str, Any]) -> dict[str, Any]:
-    keys = ["level", "event", "message", "path", "endpoint", "status_code", "duration_ms", "latency_ms", "error_type"]
+    keys = [
+        "level",
+        "event",
+        "message",
+        "path",
+        "endpoint",
+        "status_code",
+        "duration_ms",
+        "latency_ms",
+        "error_type",
+        "request_id",
+    ]
     return {"line": entry.get("_line_number"), **{key: entry[key] for key in keys if key in entry}}
+
+
+def correlated_request_ids(logs: list[dict[str, Any]]) -> list[str]:
+    """Distinct demo-service request_id values seen in the evidence used for an analysis.
+
+    This is the cross-service correlation field: it lets a reviewer follow one
+    assistant analysis back to the specific demo-service request_id values
+    that produced it, the same field demo-service already logs per request.
+    """
+    return sorted({str(entry["request_id"]) for entry in logs if entry.get("request_id")})
 
 
 def analyze_logs(logs: list[dict[str, Any]], question: str | None = None) -> dict[str, Any]:
@@ -41,6 +62,7 @@ def analyze_logs(logs: list[dict[str, Any]], question: str | None = None) -> dic
             "facts": ["The configured log file is missing or empty."],
             "guesses": ["The demo service may not have received traffic yet."],
             "evidence": [],
+            "correlated_request_ids": [],
             "next_steps": [
                 "Run make up and wait for both services to become healthy.",
                 "Run make generate-traffic to create normal, error, and latency events.",
@@ -116,6 +138,7 @@ def analyze_logs(logs: list[dict[str, Any]], question: str | None = None) -> dic
         "facts": facts,
         "guesses": guesses,
         "evidence": evidence,
+        "correlated_request_ids": correlated_request_ids(logs),
         "next_steps": next_steps,
         "possible_fixes": possible_fixes,
     }

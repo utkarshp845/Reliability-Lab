@@ -102,6 +102,23 @@ Useful structured log fields:
 
 The goal is not to log everything. The goal is to log enough consistent evidence that a human or AI assistant can separate facts from guesses.
 
+## Cross-Service Correlation
+
+Week 7, Day 1 extended the same log shape and correlation field to `ai-sre-assistant`, so the assistant is a first-class citizen in the signal path instead of a silent reader.
+
+`ai-sre-assistant` now:
+
+- Emits structured JSON logs to stdout using the same `timestamp`, `level`, `service`, `logger`, and `message` fields as `demo-service`.
+- Accepts an incoming `X-Request-ID` header on its own endpoints, generates one when missing, returns it in the `x-request-id` response header, and logs it on every `request_completed` event, the same contract `demo-service` already uses.
+- Reads the `request_id` field already present in the `demo-service` log evidence it analyzes and returns the distinct values as `correlated_request_ids` on `/analyze/logs`, `/ask`, and `/summarize-incident` responses, and on its own `analysis_completed` log event.
+
+This closes the correlation loop across services: the assistant's own `request_id` identifies the analysis call, and `correlated_request_ids` identifies which `demo-service` requests that analysis was grounded in. A reviewer can start from either service's log and land on the matching event in the other.
+
+```text
+demo-service:      request_completed request_id=demo-req-1 status_code=500
+ai-sre-assistant:   analysis_completed request_id=sre-req-9 correlated_request_ids=["demo-req-1"]
+```
+
 ## Incident Walkthroughs
 
 The next step is using logs and metrics together.
