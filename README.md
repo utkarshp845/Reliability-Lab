@@ -101,6 +101,8 @@ For the Week 4 release gates, readiness verdict, and next-stage priorities, see 
 
 For the Week 5 provider telemetry contract, aggregate metrics, and privacy boundary, see `docs/22-provider-telemetry.md`.
 
+For the optional OpenTelemetry Collector path (`make otel-up`), see `docs/23-otel-collector-path.md`.
+
 Ask the assistant directly:
 
 ```bash
@@ -146,7 +148,9 @@ Reliability-Lab/
     19-advanced-model-serving-roadmap.md
     20-production-readiness-review.md
     22-provider-telemetry.md
+    23-otel-collector-path.md
   infra/                 # Docker, Kubernetes, and Terraform starter notes
+    docker/               # Optional OpenTelemetry Collector overlay and config
     k8s/                 # kind-first Kubernetes manifests and walkthrough
   scripts/               # Local traffic and log helper scripts
   examples/              # Sample logs and questions

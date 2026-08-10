@@ -3,6 +3,8 @@ import logging
 import sys
 from datetime import UTC, datetime
 
+from app.otel_exporter import build_handler_from_env
+
 
 SERVICE_NAME = "ai-sre-assistant"
 
@@ -27,6 +29,7 @@ _RESERVED_LOG_ATTRS = {
     "processName",
     "relativeCreated",
     "stack_info",
+    "taskName",
     "thread",
     "threadName",
 }
@@ -68,6 +71,11 @@ def setup_logging() -> logging.Logger:
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(JsonFormatter())
     logger.addHandler(stdout_handler)
+
+    otlp_handler = build_handler_from_env(service_name=SERVICE_NAME)
+    if otlp_handler is not None:
+        logger.addHandler(otlp_handler)
+
     return logger
 
 

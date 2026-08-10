@@ -1,0 +1,39 @@
+# Optional overlay that adds a local OpenTelemetry Collector and points both
+# app services at it. The default quickstart (`make up`) never loads this
+# file, so it never becomes a dependency of the Day 1 path.
+#
+# Usage:
+#   make otel-up
+#   make otel-logs   # watch collected log records arrive
+#   make otel-down
+#
+# Or directly:
+#   docker compose -f docker-compose.yml -f infra/docker/docker-compose.otel.yml up --build -d
+#
+# See docs/23-otel-collector-path.md for what this demonstrates and why the
+# default path does not require it.
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector:0.110.0
+    container_name: aiops-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./infra/docker/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4318:4318"
+      - "4317:4317"
+
+  demo-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+  ai-sre-assistant:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      otel-collector:
+        condition: service_started

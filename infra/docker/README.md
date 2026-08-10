@@ -17,6 +17,18 @@ make logs
 make down
 ```
 
+## Optional: OpenTelemetry Collector
+
+`docker-compose.otel.yml` in this directory is an overlay, not a standalone file - it adds a local `otel-collector` service and points both apps at it, without changing what `make up` starts.
+
+```bash
+make otel-up
+make otel-logs
+make otel-down
+```
+
+See [`docs/23-otel-collector-path.md`](../../docs/23-otel-collector-path.md) for what it demonstrates and why it stays opt-in.
+
 ## Why Compose First
 
 Compose keeps the first learning loop short:

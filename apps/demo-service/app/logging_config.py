@@ -5,6 +5,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from app.otel_exporter import build_handler_from_env
+
 
 SERVICE_NAME = "demo-service"
 DEFAULT_LOG_PATH = "logs/demo-service.log"
@@ -30,6 +32,7 @@ _RESERVED_LOG_ATTRS = {
     "processName",
     "relativeCreated",
     "stack_info",
+    "taskName",
     "thread",
     "threadName",
 }
@@ -80,6 +83,11 @@ def setup_logging() -> logging.Logger:
 
     logger.addHandler(stdout_handler)
     logger.addHandler(file_handler)
+
+    otlp_handler = build_handler_from_env(service_name=SERVICE_NAME)
+    if otlp_handler is not None:
+        logger.addHandler(otlp_handler)
+
     return logger
 
 

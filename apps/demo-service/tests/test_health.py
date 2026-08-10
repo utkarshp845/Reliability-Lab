@@ -1,3 +1,4 @@
+import json
 import logging
 
 from fastapi.testclient import TestClient
@@ -85,3 +86,25 @@ def test_request_id_header_is_generated_when_missing():
 
     assert response.status_code == 200
     assert response.headers["x-request-id"]
+
+
+def test_json_formatter_excludes_asyncio_task_name():
+    # Python 3.12+ asyncio sets LogRecord.taskName on records logged from
+    # inside a task (e.g. the request middleware). It is a stdlib internal
+    # detail, not an application field, and must not leak into the log line.
+    formatter = logger.handlers[0].formatter
+    record = logging.LogRecord(
+        name="demo-service",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=1,
+        msg="request_completed",
+        args=(),
+        exc_info=None,
+    )
+    record.event = "request_completed"
+    record.taskName = "Task-7"
+
+    payload = json.loads(formatter.format(record))
+
+    assert "taskName" not in payload
