@@ -89,8 +89,8 @@ Attach an owner, runbook, and escalation path to every alert. Alert only when an
 ## Migration Path
 
 1. Keep the local shared-log path for the quickstart.
-2. Emit structured stdout logs and stable correlation fields.
-3. Introduce a collector once signal contracts are stable.
+2. Emit structured stdout logs and stable correlation fields. Done in [Week 7, Day 1](build-log.md#week-7-day-1---structured-assistant-logs-and-cross-service-correlation): both services share one JSON log shape and a `request_id`/`correlated_request_ids` correlation field.
+3. Introduce a collector once signal contracts are stable. Done, as an opt-in path, in [Week 7, Day 2](build-log.md#week-7-day-2---optional-opentelemetry-collector-path); see [OpenTelemetry Collector Path](23-otel-collector-path.md) for how to run it and what it does and does not cover yet.
 4. Route metrics, logs, and traces to a chosen backend.
 5. Build one dashboard and one owned alert.
 6. Exercise one incident end to end: alert, evidence, analysis, runbook action, and recovery review.

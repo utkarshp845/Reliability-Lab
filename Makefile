@@ -1,7 +1,8 @@
 COMPOSE ?= docker compose
+COMPOSE_OTEL ?= $(COMPOSE) -f docker-compose.yml -f infra/docker/docker-compose.otel.yml
 PYTHON ?= python
 
-.PHONY: up down logs build test lint generate-traffic analyze-logs evaluate-assistant validate format
+.PHONY: up down logs build test lint generate-traffic analyze-logs evaluate-assistant validate format otel-up otel-down otel-logs
 
 up:
 	$(COMPOSE) up --build -d
@@ -11,6 +12,17 @@ down:
 
 logs:
 	$(COMPOSE) logs -f demo-service ai-sre-assistant
+
+# Optional: run the same stack with a local OpenTelemetry Collector attached.
+# See docs/23-otel-collector-path.md.
+otel-up:
+	$(COMPOSE_OTEL) up --build -d
+
+otel-down:
+	$(COMPOSE_OTEL) down
+
+otel-logs:
+	$(COMPOSE_OTEL) logs -f otel-collector
 
 build:
 	$(COMPOSE) build demo-service ai-sre-assistant

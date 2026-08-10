@@ -934,3 +934,28 @@ Lessons learned:
 - Surfacing the linked IDs in the API response, not only in logs, means an operator following an alert can see the connection without first finding the raw log line.
 
 Next: add an optional OpenTelemetry Collector path once these signal contracts have proven stable, then a small dashboard and one owned alert.
+
+## Week 7, Day 2 - Optional OpenTelemetry Collector Path
+
+Today I added the collector step from the [production observability migration path](18-production-observability.md#migration-path) as an opt-in overlay, keeping the default quickstart untouched.
+
+What changed:
+
+- Added `app/otel_exporter.py` to both `demo-service` and `ai-sre-assistant`: a `logging.Handler` that converts each `LogRecord` into an OTLP/HTTP JSON log record and POSTs it to `{OTEL_EXPORTER_OTLP_ENDPOINT}/v1/logs`, reusing the same extra-field pickup rule `JsonFormatter` already uses so a collector sees exactly what the local JSON log line shows.
+- Wired the handler into each `setup_logging()` behind `OTEL_EXPORTER_OTLP_ENDPOINT`; unset (the default) attaches nothing, so `make up` never touches the network for logging and never depends on a collector existing.
+- Added `infra/docker/docker-compose.otel.yml`, a Compose overlay that adds an `otel-collector` service (`otlp` receiver, `batch` processor, `debug` exporter - `infra/docker/otel-collector-config.yaml`) and merges `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318` into both app services, plus `make otel-up` / `make otel-logs` / `make otel-down`.
+- Verified the whole path for real: `make otel-up`, generated traffic, and confirmed `otel-collector`'s own logs show decoded `LogRecord`s from both services with matching `event` and `request_id` fields.
+- Found and fixed a real pre-existing bug while doing that verification: Python 3.12+ sets `LogRecord.taskName` on records logged from inside an asyncio task (true for every request-path log call in both services' middleware), and neither service's reserved-attribute set excluded it. Both Dockerfiles have used `python:3.12-slim` since Day 1, so `taskName` has been leaking into every JSON stdout log line since the beginning; it just took decoding records one at a time through a collector's `debug` exporter to notice it next to a raw terminal dump. Added `taskName` to both `_RESERVED_LOG_ATTRS` sets and regression-tested it in both the `JsonFormatter` and OTLP paths.
+- Documented the whole path, including what it deliberately does not do yet (no metrics/traces pipeline, no backend, no batching), in `docs/23-otel-collector-path.md`.
+
+Why this matters:
+
+A collector step that changes the default `make up` experience would fail the Week 7 exit gate outright. The overlay pattern (`-f docker-compose.yml -f infra/docker/docker-compose.otel.yml`) and an unset-by-default env var both make "optional" a property you can verify, not just a claim in a doc. The `taskName` fix mattered more than its size suggests: it is exactly the kind of noise a collector step is supposed to surface, since printing raw JSON to a terminal makes an extra field easy to miss, but decoding every record on the way into a collector's `debug` exporter makes it obvious.
+
+Lessons learned:
+
+- An OTLP exporter needs the same "which fields count as evidence" answer the local JSON formatter already gives; computing that twice, differently, is how a collector and a local log file quietly drift apart. Duplicating the reserved-attrs *set* (plain data) across the two per-service modules was fine; duplicating the *filtering logic* would not have been.
+- A synchronous handler like this one has real precedent in this codebase (`llm.py` already makes a blocking `httpx` call from a request handler); it's still worth writing down as a deliberate, bounded tradeoff, because that's the difference between a shortcut and a landmine for the next reader.
+- Running the actual stack, not only unit tests, is what surfaced `taskName`. A test with a hand-built `LogRecord` never sets attributes the stdlib adds automatically at runtime; only real traffic through the real middleware does.
+
+Next: build one dashboard and one actionable, owned alert once the log signal path has proven itself, per Week 7's remaining exit-gate work.

@@ -62,7 +62,7 @@ See [Provider Telemetry Contract](22-provider-telemetry.md) for the per-request 
 ## Week 7 - Production Signal Path
 
 - Day 1 - complete: give `ai-sre-assistant` structured JSON stdout logs in the same shape as `demo-service`, plus a shared `request_id` field and a `correlated_request_ids` list that ties an assistant analysis back to the demo-service requests it read.
-- Add an optional OpenTelemetry Collector path after signal contracts are stable.
+- Day 2 - complete: add an opt-in OpenTelemetry Collector overlay (`make otel-up`) that both services export OTLP/HTTP logs to when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, without changing the default `make up` quickstart.
 - Add a small dashboard and one actionable, owned alert.
 - Exercise one incident from alert through evidence, assistant analysis, runbook action, and recovery review.
 
