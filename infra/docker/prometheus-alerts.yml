@@ -1,0 +1,27 @@
+# The one actionable, owned alert for Week 7. See docs/24-dashboard-and-alert.md
+# for how to trigger it locally and docs/incidents/01-error-spike.md for the
+# runbook it points to.
+#
+# This is a single ratio threshold, not a multi-window burn-rate alert. That
+# is a deliberate Day 3 simplification, not the recommended production
+# pattern - see docs/24-dashboard-and-alert.md for the tradeoff.
+groups:
+  - name: reliability-lab.rules
+    rules:
+      - alert: DemoServiceHighErrorRate
+        expr: >-
+          (
+            sum(rate(demo_service_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(demo_service_http_requests_total[5m]))
+          ) > 0.25
+        for: 1m
+        labels:
+          severity: page
+          owner: demo-service-oncall
+        annotations:
+          summary: demo-service is returning elevated 5xx responses
+          description: >-
+            More than 25% of demo-service requests over the last 5 minutes
+            returned an HTTP 5xx status. Current ratio: {{ $value | humanizePercentage }}.
+          runbook: docs/incidents/01-error-spike.md

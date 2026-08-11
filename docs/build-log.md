@@ -959,3 +959,28 @@ Lessons learned:
 - Running the actual stack, not only unit tests, is what surfaced `taskName`. A test with a hand-built `LogRecord` never sets attributes the stdlib adds automatically at runtime; only real traffic through the real middleware does.
 
 Next: build one dashboard and one actionable, owned alert once the log signal path has proven itself, per Week 7's remaining exit-gate work.
+
+## Week 7, Day 3 - Dashboard And Alert
+
+Today I added the "one dashboard and one owned alert" step from the [production observability migration path](18-production-observability.md#migration-path), again as an opt-in overlay.
+
+What changed:
+
+- Added `infra/docker/docker-compose.dashboard.yml`, an overlay that adds Prometheus (`infra/docker/prometheus.yml`) scraping the Prometheus-format `/metrics` endpoints both services have exposed since Week 1-2 - no new instrumentation, no OTLP metrics path - and Grafana, provisioned automatically with one datasource and one dashboard.
+- Added the "Service health" dashboard (`infra/docker/grafana/provisioning/dashboards/json/service-health.json`): request rate by status code, the 5xx error ratio, p95 latency, and simulated events by endpoint. It is the first row of the [Dashboard Set](18-production-observability.md#dashboard-set) table from Week 4; the other three rows are still future work.
+- Added the one alert (`infra/docker/prometheus-alerts.yml`): `DemoServiceHighErrorRate`, a 25% 5xx-ratio threshold over 5 minutes with a `for: 1m` debounce, an `owner` label, and a `runbook` annotation pointing at the existing [error-spike walkthrough](incidents/01-error-spike.md) rather than a new document written to match the alert.
+- Added `make dashboard-up` / `dashboard-logs` / `dashboard-down`.
+- Verified the whole path for real, not just the config: brought the stack up with `make dashboard-up`, confirmed both scrape targets showed `up` in Prometheus, drove the demo service into a sustained error state and watched the alert move `inactive` → `pending` → `firing` with a real computed ratio (73%), and confirmed the Grafana dashboard rendered live data across all four panels, including the 5xx stat panel matching the alert's own number.
+- Documented the dashboard, the alert, why it is a single ratio threshold rather than a burn-rate pair, and why there is no Alertmanager yet, in `docs/24-dashboard-and-alert.md`.
+
+Why this matters:
+
+[docs/18](18-production-observability.md#slo-and-alert-design) asks for an owner, a runbook, and an escalation path on every alert, and for every chart to answer an operating question or get removed. Reusing the Day-1-era error-spike runbook instead of writing a new one is exactly that discipline: the alert's annotation should point somewhere that already answers "what do I do now," not somewhere written to make the alert look complete.
+
+Lessons learned:
+
+- Config-only additions (a Compose overlay, a Prometheus rule, a Grafana JSON dashboard) are exactly the kind of change that "looks right" without being run. Bringing the stack up and actually watching the alert transition states was the only way to know the PromQL expression, the label set, and the panel queries all agreed with each other.
+- A stat panel that shows the *same number the alert fires on*, not a derived or approximate one, turns "why did this page me" into a one-glance answer instead of a second investigation.
+- Reusing an existing runbook is a legitimate outcome, not a shortcut - the point of writing one asset (Week 1's error-spike walkthrough) that's still directly usable in Week 7 is that operational docs should compound, not multiply.
+
+Next: exercise one incident end to end - alert, evidence, assistant analysis, runbook action, and recovery review - closing Week 7's exit gate.
