@@ -1,8 +1,9 @@
 COMPOSE ?= docker compose
 COMPOSE_OTEL ?= $(COMPOSE) -f docker-compose.yml -f infra/docker/docker-compose.otel.yml
+COMPOSE_DASHBOARD ?= $(COMPOSE) -f docker-compose.yml -f infra/docker/docker-compose.dashboard.yml
 PYTHON ?= python
 
-.PHONY: up down logs build test lint generate-traffic analyze-logs evaluate-assistant validate format otel-up otel-down otel-logs
+.PHONY: up down logs build test lint generate-traffic analyze-logs evaluate-assistant validate format otel-up otel-down otel-logs dashboard-up dashboard-down dashboard-logs
 
 up:
 	$(COMPOSE) up --build -d
@@ -23,6 +24,17 @@ otel-down:
 
 otel-logs:
 	$(COMPOSE_OTEL) logs -f otel-collector
+
+# Optional: run the same stack with Prometheus + Grafana attached, scraping
+# each service's existing /metrics endpoint. See docs/24-dashboard-and-alert.md.
+dashboard-up:
+	$(COMPOSE_DASHBOARD) up --build -d
+
+dashboard-down:
+	$(COMPOSE_DASHBOARD) down
+
+dashboard-logs:
+	$(COMPOSE_DASHBOARD) logs -f prometheus grafana
 
 build:
 	$(COMPOSE) build demo-service ai-sre-assistant

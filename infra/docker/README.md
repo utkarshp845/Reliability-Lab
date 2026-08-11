@@ -29,6 +29,20 @@ make otel-down
 
 See [`docs/23-otel-collector-path.md`](../../docs/23-otel-collector-path.md) for what it demonstrates and why it stays opt-in.
 
+## Optional: Dashboard And Alert
+
+`docker-compose.dashboard.yml` in this directory is another overlay - it adds Prometheus and Grafana, scraping the `/metrics` endpoints both apps already expose, without changing what `make up` starts.
+
+```bash
+make dashboard-up
+make dashboard-logs
+make dashboard-down
+```
+
+Grafana: <http://localhost:3000> (anonymous viewer access - dashboard is provisioned automatically). Prometheus: <http://localhost:9090>.
+
+See [`docs/24-dashboard-and-alert.md`](../../docs/24-dashboard-and-alert.md) for the one dashboard, the one alert, and how to trigger it locally.
+
 ## Why Compose First
 
 Compose keeps the first learning loop short:

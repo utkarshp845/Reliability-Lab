@@ -103,6 +103,8 @@ For the Week 5 provider telemetry contract, aggregate metrics, and privacy bound
 
 For the optional OpenTelemetry Collector path (`make otel-up`), see `docs/23-otel-collector-path.md`.
 
+For the optional dashboard and alert (`make dashboard-up`), see `docs/24-dashboard-and-alert.md`.
+
 Ask the assistant directly:
 
 ```bash
@@ -149,8 +151,9 @@ Reliability-Lab/
     20-production-readiness-review.md
     22-provider-telemetry.md
     23-otel-collector-path.md
+    24-dashboard-and-alert.md
   infra/                 # Docker, Kubernetes, and Terraform starter notes
-    docker/               # Optional OpenTelemetry Collector overlay and config
+    docker/               # Optional OpenTelemetry Collector, Prometheus, and Grafana overlays
     k8s/                 # kind-first Kubernetes manifests and walkthrough
   scripts/               # Local traffic and log helper scripts
   examples/              # Sample logs and questions

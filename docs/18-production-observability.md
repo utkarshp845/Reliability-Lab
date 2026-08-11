@@ -65,11 +65,13 @@ Week 5 implements per-request metadata plus process-local Prometheus aggregates 
 
 Each chart should answer an operating question. Remove charts that have no owner or decision attached to them.
 
+**Service health** shipped, as an opt-in overlay, in [Week 7, Day 3](build-log.md#week-7-day-3---dashboard-and-alert); see [Dashboard And Alert](24-dashboard-and-alert.md). The remaining three rows are future work.
+
 ## SLO And Alert Design
 
 Start with a small set of indicators:
 
-- Service availability: successful requests divided by all requests.
+- Service availability: successful requests divided by all requests. Alerting on this shipped in [Week 7, Day 3](build-log.md#week-7-day-3---dashboard-and-alert) as `DemoServiceHighErrorRate`; see [Dashboard And Alert](24-dashboard-and-alert.md) for the rule, its owner, and why it is a single ratio threshold rather than a burn-rate pair.
 - Service latency: a chosen percentile for a bounded route group.
 - Assistant availability: completed analyses divided by requested analyses.
 - Assistant latency: time from request receipt to final response.
@@ -91,8 +93,8 @@ Attach an owner, runbook, and escalation path to every alert. Alert only when an
 1. Keep the local shared-log path for the quickstart.
 2. Emit structured stdout logs and stable correlation fields. Done in [Week 7, Day 1](build-log.md#week-7-day-1---structured-assistant-logs-and-cross-service-correlation): both services share one JSON log shape and a `request_id`/`correlated_request_ids` correlation field.
 3. Introduce a collector once signal contracts are stable. Done, as an opt-in path, in [Week 7, Day 2](build-log.md#week-7-day-2---optional-opentelemetry-collector-path); see [OpenTelemetry Collector Path](23-otel-collector-path.md) for how to run it and what it does and does not cover yet.
-4. Route metrics, logs, and traces to a chosen backend.
-5. Build one dashboard and one owned alert.
+4. Route metrics, logs, and traces to a chosen backend. Not yet done - [Week 7, Day 3](build-log.md#week-7-day-3---dashboard-and-alert) skips ahead to step 5 by scraping the existing direct `/metrics` endpoints, the same source step 1 already uses, rather than waiting on this step.
+5. Build one dashboard and one owned alert. Done, as an opt-in path, in [Week 7, Day 3](build-log.md#week-7-day-3---dashboard-and-alert); see [Dashboard And Alert](24-dashboard-and-alert.md).
 6. Exercise one incident end to end: alert, evidence, analysis, runbook action, and recovery review.
 7. Revisit retention, access, and cardinality after real operational use.
 
