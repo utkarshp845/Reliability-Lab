@@ -186,7 +186,9 @@ You should see the assistant report intentionally generated 500s, latency spikes
 - Week 5: privacy-safe provider identity, latency, usage, outcome, fallback, and deployment-owned cost estimates.
 - Week 6: a larger versioned evaluation corpus with machine-readable CI regression reports.
 - Week 7: an optional OpenTelemetry signal path plus one owned alert-to-runbook exercise.
-- Week 8: a provider-versus-private-endpoint benchmark and an evidence-backed build-versus-buy decision.
+- Week 8: a provider-versus-private-endpoint benchmark, with a bounded GPU experiment only if the evidence earns it.
+- Week 9: production deployment readiness - identity, secrets, alert routing, the remaining dashboards, and a tested rollback.
+- Week 10: an Adapter Contract and a second example service, so this points at your own application, not just `demo-service`.
 
 The technical weeks add measurable capabilities while preserving the small, local-first learning path. See `docs/09-roadmap.md`.
 

@@ -74,39 +74,39 @@ See [Provider Telemetry Contract](22-provider-telemetry.md) for the per-request 
 - Measure quality, latency, token usage, fallbacks, throughput, and cost per successful evaluated analysis.
 - Test representative input sizes, concurrency, and burst behavior.
 - Record an evidence-backed provider-versus-private-endpoint decision before adding GPU infrastructure.
+- If, and only if, that evidence justifies it: test one approved model behind an authenticated OpenAI-compatible endpoint, add one single-GPU vLLM example, and add GPU scheduling, quotas, utilization telemetry, and out-of-memory recovery tests. Otherwise, a documented "not yet justified" is a complete, valid outcome. Ray Serve, Triton, or KServe are introduced later only if a specific orchestration problem appears - none of them are a default part of this project.
 
-**Exit gate:** evidence supports continuing with a provider or starting one bounded private-model experiment.
+**Exit gate:** evidence supports continuing with a provider, or one bounded private-model experiment exists with the same evidence rigor as everything else. The default project stays deterministic, provider-compatible, laptop-friendly, and GPU-free either way.
 
-## Internal Deployment Readiness
+## Week 9 - Production Deployment Readiness
 
-Begin only after the Week 5-8 measurement loop works and named maintainers own the operational controls.
+Everything needed to run this specific deployment reliably and securely, beyond a single laptop. Begin once named maintainers own the operational controls this introduces.
 
-- Authentication, service identity, and role-based access.
-- Managed secrets, rotation, artifact pinning, and supply-chain scanning.
-- Ingress, TLS, environment separation, and hardened deployment automation.
-- Centralized telemetry, retention policies, audit records, quotas, and budgets.
-- Initial SLOs, routed alerts, rollback tests, and recovery exercises.
-- Private evaluation datasets and controlled evidence access.
+- Authentication, service identity, and role-based access for both services.
+- Managed secrets, rotation, artifact pinning, and supply-chain scanning (SBOM plus dependency/image scanning) in CI.
+- Ingress, TLS, and environment separation (dev/staging/prod-shaped, still kind-first).
+- Alertmanager routing for the alert Week 7 shipped without a notification path, plus the three "Assistant operations," "Quality and safety," and "Cost and capacity" dashboard rows Week 7 left as future work (see [Dashboard Set](18-production-observability.md#dashboard-set)).
+- Centralized, privacy-aware telemetry retention, audit records, quotas, and budgets.
+- One rollback test and one recovery drill, in the same exercised-not-just-documented spirit as Week 7 Day 4's incident drill.
+- One multi-environment or cloud deployment example, and Horizontal Pod Autoscaling for measured non-GPU workloads, driven by metrics this project already exposes.
 
-**Exit gate:** a sanitized internal deployment can operate with explicit ownership, access controls, measurable reliability, and a tested rollback path.
+**Exit gate:** an alert reaches a human outside the terminal, a bad deploy has a tested and timed rollback, and the stack runs (documented, reproducible) beyond a single laptop.
 
-## Advanced Serving Phase - Only If Earned
+## Week 10 - Make It Yours: Adapter Contract And Governance
 
-- Test one approved model behind an authenticated OpenAI-compatible endpoint.
-- Add an optional single-GPU vLLM example only when the Week 8 benchmark or a named deployment requirement justifies it.
-- Add GPU scheduling, quotas, utilization telemetry, queue metrics, and out-of-memory recovery tests for a real workload.
-- Introduce Ray Serve, Triton, or KServe only when its specific orchestration problem appears.
-- Consider private VPC, dedicated, or on-premises packaging only for a documented deployment requirement.
+Turns this from a lab about `demo-service` into a lab you can point at your own application.
 
-The default project remains deterministic, provider-compatible, laptop-friendly, and GPU-free throughout these phases.
+- Write down the Adapter Contract: the minimal JSON log shape, metric naming convention, and `/health`/`/ready` shape any service needs to be `ai-sre-assistant`-compatible, formalizing what today is implicit in `demo-service`'s `logging_config.py` and `metrics.py`.
+- Add a second example service that satisfies the contract without copying `demo-service`, proving the contract is a real interface and not an accident of one codebase.
+- Point `ai-sre-assistant` at both services and run one incident-drill-style walkthrough against the new one.
+- Publish a "Bring Your Own Service" guide with the concrete adaptation steps.
+- Private evaluation datasets, controlled evidence access, audit-ready exports, policy controls, and usage governance.
+- Versioned evaluation history with regression alerts over time, including provider and model quality/cost comparisons over time - extending Week 6's two-report diff into a running history.
 
-## Longer-Term Community Backlog
+**Exit gate:** a service nobody on this project wrote can be plugged in and analyzed using only the written contract, and an evaluation result stays auditable after the fact without re-running anything.
 
-- Versioned evaluation history and regression alerts.
+## Open Backlog
+
+Not tied to a week - process and community items, not solo-buildable features.
+
 - Collaboration around private incident datasets.
-- Audit-ready exports, policy controls, and usage governance.
-- Privacy-aware outcome telemetry.
-- Provider and model quality/cost comparisons over time.
-- Log, metrics, and trace backend examples using Prometheus, Grafana, compatible open-source components, or managed services.
-- Multi-environment and cloud deployment examples.
-- Horizontal Pod Autoscaling for measured non-GPU workloads.
