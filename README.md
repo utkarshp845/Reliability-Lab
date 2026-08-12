@@ -105,6 +105,8 @@ For the optional OpenTelemetry Collector path (`make otel-up`), see `docs/23-ote
 
 For the optional dashboard and alert (`make dashboard-up`), see `docs/24-dashboard-and-alert.md`.
 
+For the end-to-end incident drill (`make incident-drill`) that closes the Week 7 exit gate, see `docs/25-incident-drill.md`.
+
 Ask the assistant directly:
 
 ```bash
@@ -152,6 +154,7 @@ Reliability-Lab/
     22-provider-telemetry.md
     23-otel-collector-path.md
     24-dashboard-and-alert.md
+    25-incident-drill.md
   infra/                 # Docker, Kubernetes, and Terraform starter notes
     docker/               # Optional OpenTelemetry Collector, Prometheus, and Grafana overlays
     k8s/                 # kind-first Kubernetes manifests and walkthrough

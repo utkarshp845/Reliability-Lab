@@ -95,7 +95,7 @@ Attach an owner, runbook, and escalation path to every alert. Alert only when an
 3. Introduce a collector once signal contracts are stable. Done, as an opt-in path, in [Week 7, Day 2](build-log.md#week-7-day-2---optional-opentelemetry-collector-path); see [OpenTelemetry Collector Path](23-otel-collector-path.md) for how to run it and what it does and does not cover yet.
 4. Route metrics, logs, and traces to a chosen backend. Not yet done - [Week 7, Day 3](build-log.md#week-7-day-3---dashboard-and-alert) skips ahead to step 5 by scraping the existing direct `/metrics` endpoints, the same source step 1 already uses, rather than waiting on this step.
 5. Build one dashboard and one owned alert. Done, as an opt-in path, in [Week 7, Day 3](build-log.md#week-7-day-3---dashboard-and-alert); see [Dashboard And Alert](24-dashboard-and-alert.md).
-6. Exercise one incident end to end: alert, evidence, analysis, runbook action, and recovery review.
+6. Exercise one incident end to end: alert, evidence, analysis, runbook action, and recovery review. Done in [Week 7, Day 4](build-log.md#week-7-day-4---incident-drill); see [Incident Drill](25-incident-drill.md) and run it yourself with `make incident-drill`. This closes Week 7's exit gate.
 7. Revisit retention, access, and cardinality after real operational use.
 
 The local setup remains valuable because it teaches the signal path without requiring a full observability stack.
