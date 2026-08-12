@@ -984,3 +984,31 @@ Lessons learned:
 - Reusing an existing runbook is a legitimate outcome, not a shortcut - the point of writing one asset (Week 1's error-spike walkthrough) that's still directly usable in Week 7 is that operational docs should compound, not multiply.
 
 Next: exercise one incident end to end - alert, evidence, assistant analysis, runbook action, and recovery review - closing Week 7's exit gate.
+
+## Week 7, Day 4 - Incident Drill
+
+Today I closed Week 7 by exercising the whole symptom-to-recovery workflow end to end, and turning that exercise into a repeatable script instead of a one-time narrative.
+
+What changed:
+
+- Added `scripts/run-incident-drill.py`: no third-party dependencies, matching `scripts/generate-demo-traffic.py`. It checks `demo-service` and `ai-sre-assistant` are reachable (required), drives sustained `/simulate/error` traffic while polling and printing Prometheus's alert-state transitions (Prometheus is optional - the script degrades to a note instead of failing when it's absent), calls `ai-sre-assistant`'s `/summarize-incident` with its own `X-Request-ID` and prints that ID next to the `correlated_request_ids` it returns, reads the *Likely Cause* and *Safe Debugging Steps* straight out of the existing `docs/incidents/01-error-spike.md` runbook, and then watches the alert clear back to `inactive`.
+- Added `make incident-drill`.
+- Fixed a real bug the first real run surfaced immediately: the script's HTTP helper assumed every response body was JSON, but Prometheus's own `/-/healthy` check returns plain text, so the very first Prometheus reachability check crashed with a `JSONDecodeError`. Made JSON parsing tolerant of non-JSON bodies everywhere the script talks to a service, the same shape the assistant's own log-line parser already treats malformed input.
+- Ran it for real, twice. The first run (`--recovery-wait 60`) triggered the alert (`pending` at 1s, `firing` by 34s - the clock had already started from an earlier session's leftover state, a real reminder that a `for:` debounce measures wall-clock time, not "time since this particular script started"), pulled evidence naming over 100 distinct `demo-service` `request_id`s the assistant's own analysis `request_id` was grounded in, printed the runbook's likely cause and safe steps, and then honestly reported that recovery had not finished within the shortened 60-second window. The second run, with the default 300-second recovery wait, started while the alert was still `firing` from the first run and watched it clear all the way back to `inactive` 273.7 seconds after its own traffic stopped - a full, unforced symptom-to-recovery loop, not a truncated one.
+- Added `docs/25-incident-drill.md`, including a real captured sample run and a Week 7 retrospective.
+
+Why this matters:
+
+A dashboard and an alert are not the same thing as a workflow. The exit gate asked whether an operator - or an assistant - can actually get from "something paged" to "here is what to do and here is confirmation it's resolved" using only what this project ships. Running the drill twice, and hitting a real bug on the first attempt, is the difference between a script that was written to pass a review and one that was proven against the system it describes.
+
+Lessons learned:
+
+- A `for: 1m` alert debounce is measured against wall-clock state, not against "since my script's traffic started." A rule that was already mid-debounce from an earlier session fired well before the new run's own 90-second trigger loop finished - correct behavior, but worth designing the script's narration around instead of assuming a clean baseline.
+- Treating every HTTP response as JSON is a habit that breaks the moment a script talks to more than one kind of service. `ai-sre-assistant` and `demo-service` are both this project's own JSON APIs; Prometheus is not, and a generic health check should not assume otherwise.
+- Printing the runbook's own content into the drill's output, rather than only linking to it, means the "what do I do" answer is part of the same transcript as the alert and the evidence - a reviewer does not have to open a second file to see whether the loop actually closes.
+
+Week 7 exit-gate review:
+
+The exit gate asked for a complete symptom-to-recovery workflow without changing the dependency-light quickstart. Across all four days, `docker-compose.yml` never changed - every capability (structured cross-service logs, the OTel collector, the dashboard and alert, and today's drill) is additive and opt-in, verified by actually running each one, not by inspecting its config. The drill closes the loop that Days 1 through 3 built the pieces for: a shared correlation field made the assistant's evidence checkable, the collector proved the log shape was collector-ready, the alert turned a metric into a decision, and the drill proved a human - or a script standing in for one - can walk that whole path without inventing new documentation to do it.
+
+Next: Week 8 - benchmark deterministic, managed-provider, and OpenAI-compatible private endpoints against the same evaluation corpus, and record an evidence-backed build-versus-buy decision before adding GPU infrastructure.

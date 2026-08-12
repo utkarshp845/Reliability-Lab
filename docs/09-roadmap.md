@@ -64,7 +64,7 @@ See [Provider Telemetry Contract](22-provider-telemetry.md) for the per-request 
 - Day 1 - complete: give `ai-sre-assistant` structured JSON stdout logs in the same shape as `demo-service`, plus a shared `request_id` field and a `correlated_request_ids` list that ties an assistant analysis back to the demo-service requests it read.
 - Day 2 - complete: add an opt-in OpenTelemetry Collector overlay (`make otel-up`) that both services export OTLP/HTTP logs to when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, without changing the default `make up` quickstart.
 - Day 3 - complete: add an opt-in Prometheus + Grafana overlay (`make dashboard-up`) with one owned "Service health" dashboard and one owned, runbook-linked alert (`DemoServiceHighErrorRate`), without changing the default `make up` quickstart.
-- Exercise one incident from alert through evidence, assistant analysis, runbook action, and recovery review.
+- Day 4 - complete: add `make incident-drill`, a repeatable script that exercises one incident end to end - alert, evidence, assistant analysis (with cross-service correlation), runbook action, and recovery review - closing the exit gate below.
 
 **Exit gate:** the project demonstrates a complete symptom-to-recovery workflow without changing the dependency-light quickstart.
 

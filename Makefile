@@ -3,7 +3,7 @@ COMPOSE_OTEL ?= $(COMPOSE) -f docker-compose.yml -f infra/docker/docker-compose.
 COMPOSE_DASHBOARD ?= $(COMPOSE) -f docker-compose.yml -f infra/docker/docker-compose.dashboard.yml
 PYTHON ?= python
 
-.PHONY: up down logs build test lint generate-traffic analyze-logs evaluate-assistant validate format otel-up otel-down otel-logs dashboard-up dashboard-down dashboard-logs
+.PHONY: up down logs build test lint generate-traffic analyze-logs evaluate-assistant validate format otel-up otel-down otel-logs dashboard-up dashboard-down dashboard-logs incident-drill
 
 up:
 	$(COMPOSE) up --build -d
@@ -49,6 +49,12 @@ lint: build
 
 generate-traffic:
 	$(PYTHON) scripts/generate-demo-traffic.py --base-url http://localhost:8000
+
+# Exercise one incident end to end: alert, evidence, analysis, runbook,
+# recovery. Requires `make up`; richer with `make dashboard-up` also running.
+# See docs/25-incident-drill.md.
+incident-drill:
+	$(PYTHON) scripts/run-incident-drill.py
 
 analyze-logs:
 	$(COMPOSE) run --rm --no-deps ai-sre-assistant python cli/sre.py analyze --max-lines 120
